@@ -1,0 +1,163 @@
+import pandas as pd
+import numpy as np
+import os
+import tensorflow as tf
+import tensorflow.keras as keras
+from get_data import DATA_DIR
+
+BATCH_SIZE = 12
+PROCESSED_DATA_DIR = "/home/kaptim/eth/mlmc/project/bottom_up/code/processed_data/"
+
+# set seed for reproducibility
+tf.random.set_seed(0)
+
+
+def get_metadata(is_train: bool, targets, country):
+    # returns the pd dataframe containing the metadata for training the model
+    columns = ["id", "country"] + targets
+    if is_train:
+        metadata = pd.read_csv(DATA_DIR + "/train.csv").loc[:, columns]
+    else:
+        metadata = pd.read_csv(DATA_DIR + "/test.csv").loc[:, columns]
+    metadata = metadata[metadata["country"] == country]
+    return (
+        tf.convert_to_tensor(metadata.loc[:, "id"].to_numpy()),
+        metadata["id"].astype(str).to_list(),
+        tf.convert_to_tensor(metadata.loc[:, targets].to_numpy()),
+    )
+
+
+def get_metadata_index(file_path, ids):
+    # get index of image in the metadata dataframe based on the image path
+    file_name = tf.strings.split(file_path, os.path.sep)[-1]
+    file_id = tf.strings.to_number(tf.strings.split(file_name, ".")[0], tf.int64)
+    return tf.argmax(file_id == ids)
+
+
+def get_targets_per_file(file_path, ids, targets):
+    # get targets based on id contained in the file name of the image
+    return targets[get_metadata_index(file_path, ids), :]
+
+
+def decode_img(img_height, img_width, img):
+    # taken from the tensorflow documentation
+    # convert the compressed string to a 3D uint8 tensor
+    img = tf.io.decode_jpeg(img, channels=3)
+    # resize the image to the desired size
+    img = tf.image.resize(img, [img_height, img_width])
+    return img
+
+
+def process_path(file_path, ids, targets, img_height, img_width):
+    # taken from the tensorflow documentation: read and decode image
+    # function can be applied using a tensorflow map operation
+    target = get_targets_per_file(file_path, ids, targets)
+    img = tf.io.read_file(file_path)
+    img = decode_img(img_height, img_width, img)
+    return img, target
+
+
+def get_country_data(dataset, is_train, targets, img_height, img_width, country):
+    # decode file, resize and get targets per image
+    # load data for specific country only
+    ids, selected_files, targets_tf = get_metadata(is_train, targets, country)
+    all_files_dict = {
+        f.split(".")[0].split("/")[-1]: f
+        for f in tf.io.gfile.glob(DATA_DIR + "/images/" + dataset + "/*/*.jpg")
+    }
+    # select file names from country
+    selected_files_paths = [all_files_dict[f] for f in selected_files]
+    ds = tf.data.Dataset.from_tensor_slices(selected_files_paths)
+    # decode image, add targets
+    ds = ds.map(
+        lambda file_path: process_path(
+            file_path, ids, targets_tf, img_height, img_width
+        ),
+        num_parallel_calls=tf.data.AUTOTUNE,
+    )
+    return ds
+
+
+def save_country_data(ds, img_height, img_width, num_targets, name):
+    # save tensorflow dataset as numpy arrays
+    x_numpy = np.empty(
+        (tf.data.experimental.cardinality(ds).numpy(), img_height, img_width, 3)
+    )
+    y_numpy = np.empty((tf.data.experimental.cardinality(ds).numpy(), num_targets))
+    for i, data in enumerate(ds):
+        x_numpy[i] = data[0].numpy()
+        y_numpy[i] = data[1].numpy()
+
+    np.save(PROCESSED_DATA_DIR + "x_" + name, x_numpy)
+    np.save(PROCESSED_DATA_DIR + "y_" + name, y_numpy)
+    # full quantization input and output (needed for inference on the device)
+    np.save(PROCESSED_DATA_DIR + "x_" + name + "_q", x_numpy.astype(np.uint8))
+    np.save(PROCESSED_DATA_DIR + "y_" + name + "_q", y_numpy.astype(np.uint8))
+
+
+def preprocess_data(ds, is_train: bool, img_height, img_width):
+    # preprocessing which is necessary for structured training in python
+    # rescale RGB values to [0, 1]
+    # rescaling on device done using a python script
+    scaling = keras.layers.Rescaling(scale=1.0 / 255)
+    ds = ds.map(lambda x, y: (scaling(x), y), num_parallel_calls=tf.data.AUTOTUNE)
+    if is_train:
+        # only shuffle train set
+        ds = ds.shuffle(buffer_size=BATCH_SIZE)
+    ds = ds.batch(BATCH_SIZE)
+
+    if is_train:
+        # only augment train set
+        augmentation = tf.keras.Sequential(
+            [
+                keras.layers.RandomFlip("horizontal"),
+                keras.layers.RandomRotation(0.1, fill_mode="nearest"),
+                keras.layers.RandomCrop(int(img_height * 0.9), int(img_width * 0.9)),
+                # some of the augmentation operations change the size of the image
+                keras.layers.Resizing(img_height, img_width),
+            ]
+        )
+        ds = ds.map(
+            lambda x, y: (augmentation(x, training=True), y),
+            num_parallel_calls=tf.data.AUTOTUNE,
+        )
+
+    return ds.prefetch(buffer_size=tf.data.AUTOTUNE)
+
+
+def load_dataset(cfg, is_train: bool):
+    """Preprocesses images and sets up the train, val or test set
+
+    Args:
+        is_train (bool): Whether to get training and validation data (True)
+            or testing data (False)
+        targets (list): Targets for training
+
+    Returns:
+        tuple of (train) or single (test) tf dataset: not loaded into memory
+    """
+    dataset = "train" if is_train else "test"
+    # this step might take a few minutes for train (linear CPU operation)
+    img_height = cfg["img_height"]
+    img_width = cfg["img_width"]
+    country = "CH"
+    name = "_".join([dataset, country, str(img_height), str(img_width)])
+    list_ds = get_country_data(
+        dataset, is_train, cfg["targets"], img_height, img_width, country
+    )
+    if not os.path.isfile(PROCESSED_DATA_DIR + "x_" + name + ".npy") and not is_train:
+        # test data not yet saved as numpy arrays
+        save_country_data(list_ds, img_height, img_width, len(cfg["targets"]), name)
+
+    image_count = tf.data.experimental.cardinality(list_ds).numpy()
+    print(str(image_count) + " images in the " + dataset + " set")
+    if is_train:
+        # split up into train and validation set
+        val_size = int(image_count * 0.2)
+        train_ds = list_ds.skip(val_size)
+        val_ds = list_ds.take(val_size)
+        return preprocess_data(train_ds, True, img_height, img_width), preprocess_data(
+            val_ds, False, img_height, img_width
+        )
+    else:
+        return preprocess_data(list_ds, False, img_height, img_width), image_count
