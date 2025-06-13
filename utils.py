@@ -1,4 +1,7 @@
-from models import load_model, MODELS_PATH
+import os
+import re
+import subprocess
+from models import MODELS_PATH
 
 
 def hex_to_c_array(hex_data, var_name):
@@ -52,3 +55,51 @@ def convert_tflite_to_c(cfg, train_type):
     c_model_name = "".join(cfg["path"].split("_")) + train_type
     with open(MODELS_PATH + "/cfiles/" + c_model_name + ".h", "w") as file:
         file.write(hex_to_c_array(tflite_model_content, c_model_name))
+
+
+def install_java(package: str = "openjdk-17-jdk", version: int = 17) -> bool:
+    """Checks for a Java installation and installs it if necessary"""
+    try:
+        result = subprocess.run(
+            ["java", "--version"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        version_output = result.stdout.splitlines()[0]
+        match = re.search(
+            r"(\d+)\.(\d+)\.(\d+)", version_output
+        )  # Match version in form major.minor.patch
+        print(f"Found Java version: {match.group(0)}")
+        if match:
+            major_version = int(match.group(1))
+            if major_version == version:
+                return True
+            else:
+                print(f"Java {version} is not installed. Installing correct version...")
+    except (subprocess.CalledProcessError, FileNotFoundError) as e:
+        print(f"Java not installed. Installing...")
+
+    try:
+        is_root = os.geteuid() == 0
+        prefix = [] if is_root else ["sudo"]
+        with open(os.devnull, "w") as devnull:
+            subprocess.run(
+                prefix + ["apt", "install", "-y", package],
+                check=True,
+                stdout=devnull,
+                stderr=devnull,
+            )
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"Installation error: {e}")
+        return False
+
+
+def mct_setup():
+    # mct converter requires Java
+    if install_java():
+        print(f"Java installed")
+    else:
+        print(f"Java missing and installation failed")
