@@ -74,8 +74,15 @@ def load_model(cfg, train_type, mct):
     return model
 
 
-def save_h5_model(cfg, train_type, mct):
-    """Load and save (trained) tensorflow model (.h5: legacy format)"""
+def load_h5_model(cfg, train_type, mct):
+    """Load saved (trained) tensorflow model"""
+    return keras.saving.load_model(
+        MODELS_PATH + cfg["path"] + mct + train_type + ".keras"
+    )
+
+
+def save_keras_model(cfg, train_type, mct):
+    """Load and save (trained) tensorflow model"""
     model = load_model(cfg, train_type, mct)
-    model.save(MODELS_PATH + cfg["path"] + mct + train_type + ".h5")
+    model.save(MODELS_PATH + cfg["path"] + mct + train_type + ".keras")
     print(".h5 file saved successfully")
