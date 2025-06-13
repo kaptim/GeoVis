@@ -15,14 +15,14 @@ from quantization import quantize_post_training
 RESULTS_PATH = "/home/kaptim/eth/mlmc/project/bottom_up/code/results/"
 
 
-def train_run(cfg, model, train_type, mct):
+def train_run(cfg, model, train_type):
     # main training function, input: compiled model
     # train_type = "" if fp, "qat" if qa training
     train_ds, val_ds = load_dataset(cfg, True)
 
     # best model (based on validation loss) should be saved automatically
     checkpoint_path = (
-        MODELS_PATH + "weights/" + cfg["path"] + mct + train_type + ".weights.h5"
+        MODELS_PATH + "weights/" + cfg["path"] + train_type + ".weights.h5"
     )
     print("Train: Saving weights in " + checkpoint_path)
     checkpoint_callback = keras.callbacks.ModelCheckpoint(
@@ -33,21 +33,19 @@ def train_run(cfg, model, train_type, mct):
         save_weights_only=True,
         verbose=1,
     )
+    # save training and validation results
     csv_logger = keras.callbacks.CSVLogger(
         RESULTS_PATH + cfg["path"] + train_type + ".csv"
     )
 
     # TODO: lr scheduler?
 
-    history = model.fit(
+    model.fit(
         train_ds,
         validation_data=val_ds,
         epochs=cfg["epochs"],
         callbacks=[checkpoint_callback, csv_logger],
     )
-
-    with open(RESULTS_PATH + cfg["path"] + train_type + ".pickle", "wb") as f:
-        pickle.dump(history.history, f)
 
 
 def fp_train(cfg):
