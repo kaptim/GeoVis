@@ -9,6 +9,7 @@ import tensorflow.keras as keras
 import tensorflow_model_optimization as tfmot
 from load_data import load_dataset
 from models import create_model, load_model, MODELS_PATH
+from quantization import quantize_post_training
 from utils import convert_tflite_to_c
 
 RESULTS_PATH = "/home/kaptim/eth/mlmc/project/bottom_up/code/results/"
@@ -30,7 +31,6 @@ def train_run(cfg, model, train_type):
         save_weights_only=True,
         verbose=1,
     )
-    early_stopping = keras.callbacks.EarlyStopping(monitor="val_loss", patience=10)
     csv_logger = keras.callbacks.CSVLogger(
         RESULTS_PATH + cfg["path"] + train_type + ".csv"
     )
@@ -41,42 +41,11 @@ def train_run(cfg, model, train_type):
         train_ds,
         validation_data=val_ds,
         epochs=cfg["epochs"],
-        callbacks=[checkpoint_callback, early_stopping, csv_logger],
+        callbacks=[checkpoint_callback, csv_logger],
     )
 
     with open(RESULTS_PATH + cfg["path"] + train_type + ".pickle", "wb") as f:
         pickle.dump(history.history, f)
-
-
-def quantize_post_training(cfg, train_type):
-    """Quantize an existing model (full-integer quantization)"""
-    quantized_model_path = MODELS_PATH + cfg["path"] + train_type + ".tflite"
-    if os.path.isfile(quantized_model_path):
-        print(
-            "Quantization: " + cfg["path"] + train_type + " has already been quantized"
-        )
-        return
-
-    model = load_model(cfg, train_type)
-
-    def representative_data_gen():
-        # get 100 samples of the train dataset for quantization
-        train_ds, val_ds = load_dataset(cfg, True)
-        for data in train_ds.unbatch().batch(1).take(100):
-            yield [data[0]]
-
-    converter = tf.lite.TFLiteConverter.from_keras_model(model)
-    converter.optimizations = [tf.lite.Optimize.DEFAULT]
-    converter.representative_dataset = representative_data_gen
-    converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
-    converter.inference_input_type = tf.int8
-    converter.inference_output_type = tf.int8
-    tflite_quant_model = converter.convert()
-
-    with open(quantized_model_path, "wb") as f:
-        f.write(tflite_quant_model)
-
-    print("Quantization: " + cfg["path"] + train_type + " was quantized")
 
 
 def fp_train(cfg):
@@ -89,7 +58,7 @@ def qa_train(cfg):
     # quantization-aware training
     # recommended to use a pre-trained fp model
     print("QATrain: Start")
-    qa_model = tfmot.quantization.keras.quantize_model(load_model(cfg, ""))
+    qa_model = tfmot.quantization.keras.quantize_model(load_model(cfg, "", ""))
     qa_model.compile(
         optimizer=cfg["optimizer"],
         loss=cfg["loss"],
@@ -102,11 +71,11 @@ def qa_train(cfg):
     convert_tflite_to_c(cfg, train_type)
 
 
-def evaluate_model(cfg, train_type, quantized=False):
+def evaluate_model(cfg, train_type, mct, quantized=False):
     # evaluate a checkpointed model on the test set
     test_ds, img_count = load_dataset(cfg, False)
     if not quantized:
-        model = load_model(cfg, train_type)
+        model = load_model(cfg, train_type, mct)
         results = model.evaluate(test_ds)
     else:
         # quantized performance evaluation

@@ -7,7 +7,8 @@ import tensorflow.keras as keras
 import tensorflow_model_optimization as tfmot
 from load_data import BATCH_SIZE
 
-MODELS_PATH = "/home/kaptim/eth/mlmc/project/bottom_up/saved_models/"
+MODELS_PATH = "/home/kaptim/eth/mlmc/project/bottom_up/code/saved_models/"
+WEIGHTS_PATH = "/home/kaptim/eth/mlmc/project/bottom_up/code/weights/"
 
 # TODO: rebuild with functions + Sequential
 # TODO: increase dense layers
@@ -65,9 +66,10 @@ def create_model(cfg, train_type):
         return model
 
 
-def load_model(cfg, train_type):
+def load_model(cfg, train_type, mct):
     """Create model and load saved weights into it
-    train_type: "" if fp, "qat" if qa training"""
+    train_type: "" if fp, "qat" if qa training
+    mct: "mct" if mct (Sony), "" else"""
     model = create_model(cfg, train_type)
-    model.load_weights(MODELS_PATH + cfg["path"] + train_type + ".weights.h5")
+    model.load_weights(WEIGHTS_PATH + cfg["path"] + mct + train_type + ".weights.h5")
     return model
