@@ -5,12 +5,9 @@ os.environ["TF_USE_LEGACY_KERAS"] = "1"
 import tensorflow as tf
 import tensorflow.keras as keras
 import tensorflow_model_optimization as tfmot
-from load_data import BATCH_SIZE
 
 MODELS_PATH = "/home/kaptim/eth/mlmc/project/bottom_up/code/saved_models/"
-WEIGHTS_PATH = "/home/kaptim/eth/mlmc/project/bottom_up/code/weights/"
 
-# TODO: rebuild with functions + Sequential
 # TODO: increase dense layers
 
 
@@ -71,5 +68,14 @@ def load_model(cfg, train_type, mct):
     train_type: "" if fp, "qat" if qa training
     mct: "mct" if mct (Sony), "" else"""
     model = create_model(cfg, train_type)
-    model.load_weights(WEIGHTS_PATH + cfg["path"] + mct + train_type + ".weights.h5")
+    model.load_weights(
+        MODELS_PATH + "weights/" + cfg["path"] + mct + train_type + ".weights.h5"
+    )
     return model
+
+
+def save_h5_model(cfg, train_type, mct):
+    """Load and save (trained) tensorflow model (.h5: legacy format)"""
+    model = load_model(cfg, train_type, mct)
+    model.save(MODELS_PATH + cfg["path"] + mct + train_type + ".h5")
+    print(".h5 file saved successfully")

@@ -52,17 +52,3 @@ def convert_tflite_to_c(cfg, train_type):
     c_model_name = "".join(cfg["path"].split("_")) + train_type
     with open(MODELS_PATH + "/cfiles/" + c_model_name + ".h", "w") as file:
         file.write(hex_to_c_array(tflite_model_content, c_model_name))
-
-
-def save_h5_model(cfg, train_type, mct):
-    # load and save (trained) tensorflow model
-    model = load_model(cfg, train_type, mct)
-    model.save(MODELS_PATH + cfg["path"] + train_type + ".h5")
-    print(".h5 file saved successfully")
-
-
-def save_h5_model(cfg, train_type, mct):
-    # load and save (trained) tensorflow model (.h5: legacy format)
-    model = load_model(cfg, train_type, mct)
-    model.save(MODELS_PATH + cfg["path"] + mct + train_type + ".h5")
-    print(".h5 file saved successfully")

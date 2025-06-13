@@ -15,13 +15,15 @@ from utils import convert_tflite_to_c
 RESULTS_PATH = "/home/kaptim/eth/mlmc/project/bottom_up/code/results/"
 
 
-def train_run(cfg, model, train_type):
+def train_run(cfg, model, train_type, mct):
     # main training function, input: compiled model
     # train_type = "" if fp, "qat" if qa training
     train_ds, val_ds = load_dataset(cfg, True)
 
     # best model (based on validation loss) should be saved automatically
-    checkpoint_path = MODELS_PATH + cfg["path"] + train_type + ".weights.h5"
+    checkpoint_path = (
+        MODELS_PATH + "weights/" + cfg["path"] + mct + train_type + ".weights.h5"
+    )
     print("Train: Saving weights in " + checkpoint_path)
     checkpoint_callback = keras.callbacks.ModelCheckpoint(
         filepath=checkpoint_path,
@@ -51,7 +53,7 @@ def train_run(cfg, model, train_type):
 def fp_train(cfg):
     # floating-point training (no restrictions on the parameters)
     model = create_model(cfg, "")
-    train_run(cfg, model, "")
+    train_run(cfg, model, "", "")
 
 
 def qa_train(cfg):
@@ -65,7 +67,7 @@ def qa_train(cfg):
         metrics=cfg["metrics"],
     )
     train_type = "qat"
-    train_run(cfg, qa_model, train_type)
+    train_run(cfg, qa_model, train_type, "")
     print("QATrain: Quantize")
     quantize_post_training(cfg, train_type)
     convert_tflite_to_c(cfg, train_type)

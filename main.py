@@ -1,7 +1,7 @@
 import os
 
 # needed for quantization-aware training in tensorflow > 2.15
-# os.environ["TF_USE_LEGACY_KERAS"] = "1"
+os.environ["TF_USE_LEGACY_KERAS"] = "1"
 import sys
 from load_cfg import load_cfg
 import train
