@@ -9,8 +9,8 @@ import tensorflow.keras as keras
 import tensorflow_model_optimization as tfmot
 from load_data import load_dataset
 from models import create_model, load_model, MODELS_PATH
-from quantization import quantize_post_training
 from utils import convert_tflite_to_c
+from quantization import quantize_post_training
 
 RESULTS_PATH = "/home/kaptim/eth/mlmc/project/bottom_up/code/results/"
 
