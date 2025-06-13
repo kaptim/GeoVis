@@ -66,10 +66,13 @@ def quantize_post_training_mct(cfg, train_type):
     CFG = cfg
 
     # Get a FrameworkQuantizationCapabilities object that models the hardware for the quantized model inference.
-    # Here, for example, we use the default platform that is attached to a Keras layers representation.
+    # Here, for example, we use the default platform (IMX500)
     target_platform_cap = mct.get_target_platform_capabilities("tensorflow", "default")
     quantized_model, quantization_info = mct.ptq.keras_post_training_quantization(
         in_model=model,
         representative_data_gen=representative_data_gen,
         target_platform_capabilities=target_platform_cap,
+    )
+    mct.exporter.keras_export_model(
+        model=quantized_model, save_model_path=quantized_model_path
     )

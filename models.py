@@ -65,26 +65,30 @@ def load_model(cfg, train_type, mct):
     """Create model and load saved weights into it
     train_type: "" if fp, "qat" if qa training
     mct: "mct" if mct (Sony), "" else"""
-    try:
-        model = create_model(cfg, train_type)
-        model.load_weights(
-            MODELS_PATH + "weights/" + cfg["path"] + mct + train_type + ".weights.h5"
+    if not mct:
+        try:
+            model = create_model(cfg, train_type)
+            model.load_weights(
+                MODELS_PATH + "weights/" + cfg["path"] + train_type + ".weights.h5"
+            )
+        except:
+            print("Loading .h5 model")
+            model = keras.saving.load_model(
+                MODELS_PATH + cfg["path"] + train_type + ".h5"
+            )
+    else:
+        print("Loading mct .keras model")
+        model = mct.keras_load_quantized_model(
+            MODELS_PATH + cfg["path"] + "mct" + train_type + ".keras"
         )
-    except:
-        print("Loading .h5 model")
-        model = load_h5_model(cfg, train_type, mct)
+        model.compile(loss=cfg["loss"], metrics=cfg["metrics"])
     return model
 
 
-def load_h5_model(cfg, train_type, mct):
-    """Load saved (trained) tensorflow model
+def save_h5_model(cfg, train_type, mct):
+    """Load and save (trained) tensorflow model
     (.h5: legacy format but very useful for transferring models between tensorflow versions)
     """
-    return keras.saving.load_model(MODELS_PATH + cfg["path"] + mct + train_type + ".h5")
-
-
-def save_h5_model(cfg, train_type, mct):
-    """Load and save (trained) tensorflow model (.h5: legacy format)"""
     model = load_model(cfg, train_type, mct)
     model.save(MODELS_PATH + cfg["path"] + mct + train_type + ".h5")
     print(".h5 file saved successfully")
