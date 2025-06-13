@@ -49,6 +49,7 @@ def quantize_post_training(cfg, train_type):
 def quantize_post_training_mct(cfg, train_type):
     """Quantize an existing model (full-integer quantization) using Sony's model compression toolkit
     train_type: "" if fp, "qat" if qa training"""
+    # have to use .keras
     quantized_model_path = MODELS_PATH + cfg["path"] + "mct" + train_type + ".keras"
     if os.path.isfile(quantized_model_path):
         print(
@@ -65,8 +66,8 @@ def quantize_post_training_mct(cfg, train_type):
     global CFG
     CFG = cfg
 
-    # Get a FrameworkQuantizationCapabilities object that models the hardware for the quantized model inference.
-    # Here, for example, we use the default platform (IMX500)
+    # get a FrameworkQuantizationCapabilities object that models the hardware for the quantized model inference.
+    # default platform: IMX500
     target_platform_cap = mct.get_target_platform_capabilities("tensorflow", "default")
     quantized_model, quantization_info = mct.ptq.keras_post_training_quantization(
         in_model=model,

@@ -5,6 +5,7 @@ os.environ["TF_USE_LEGACY_KERAS"] = "1"
 import tensorflow as tf
 import tensorflow.keras as keras
 import tensorflow_model_optimization as tfmot
+import model_compression_toolkit as mct
 
 MODELS_PATH = "/home/kaptim/eth/mlmc/project/bottom_up/code/saved_models/"
 
