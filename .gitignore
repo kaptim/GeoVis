@@ -1,3 +1,6 @@
+__pycache__
+*. pyc
+
 saved_models
 processed_data
 results
