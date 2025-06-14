@@ -1,5 +1,8 @@
 import yaml
+import numpy as np
+from sklearn.preprocessing import OneHotEncoder
 import tensorflow.keras as keras
+from load_data import fit_oh_encoder
 
 CFGS_FOLDER = "/home/kaptim/eth/mlmc/project/bottom_up/code/cfgs"
 
@@ -34,6 +37,26 @@ def convert_preprocessor(preprocessor_str):
         return None
 
 
+def add_oh_encoder(cfg):
+    # set up one_hot_encoder (needed for classification)
+    if cfg["task"] == "classification":
+        print("Classification task: fit OneHotEncoder on train set")
+        cfg["oh_encoder"] = OneHotEncoder(handle_unknown="error", dtype=np.float32)
+        # need to always fit it to the training data so that we have
+        # the same encoder for training and testing (this may take a while)
+        fit_oh_encoder(cfg)
+        cfg["classes"] = cfg["oh_encoder"].categories_[0]
+    elif cfg["task"] == "regression":
+        return
+    else:
+        raise ValueError(cfg["task"] + " not a known task")
+
+
+def check_targets(cfg):
+    if cfg["task"] == "classification" and len(cfg["targets"]) > 1:
+        raise ValueError("More than one target is not supported for classification")
+
+
 def load_cfg(cfg_path):
     # cfg_path supplied when running main
     # initialise checkpoint path, set up classes (e.g., MSE loss class instead of mse)
@@ -44,4 +67,6 @@ def load_cfg(cfg_path):
     cfg["metrics"] = [convert_metric(metric) for metric in cfg["metrics"]]
     cfg["optimizer"] = convert_optimizer(cfg["optimizer"], cfg["lr"])
     cfg["preprocessor"] = convert_preprocessor(cfg.get("preprocessor", None))
+    add_oh_encoder(cfg)
+    check_targets(cfg)
     return cfg

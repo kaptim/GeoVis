@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import os
+from sklearn.preprocessing import OneHotEncoder
 import tensorflow as tf
 import tensorflow.keras as keras
 from get_data import DATA_DIR
@@ -12,19 +13,37 @@ PROCESSED_DATA_DIR = "/home/kaptim/eth/mlmc/project/bottom_up/code/processed_dat
 tf.random.set_seed(0)
 
 
-def get_metadata(is_train: bool, targets, country):
+def fit_oh_encoder(cfg):
+    # fit one-hot encoder on training dataset
+    columns = ["id", "country"] + cfg["targets"]
+    metadata = pd.read_csv(DATA_DIR + "/train.csv").loc[:, columns]
+    metadata = metadata[metadata["country"].isin(cfg["countries"])]
+    cfg["oh_encoder"].fit(metadata[cfg["targets"]])
+
+
+def get_metadata(cfg, is_train: bool):
     # returns the pd dataframe containing the metadata for training the model
-    columns = ["id", "country"] + targets
+    columns = ["id", "country"] + cfg["targets"]
     if is_train:
         metadata = pd.read_csv(DATA_DIR + "/train.csv").loc[:, columns]
     else:
         metadata = pd.read_csv(DATA_DIR + "/test.csv").loc[:, columns]
-    metadata = metadata[metadata["country"] == country]
-    return (
-        tf.convert_to_tensor(metadata.loc[:, "id"].to_numpy()),
-        metadata["id"].astype(str).to_list(),
-        tf.convert_to_tensor(metadata.loc[:, targets].to_numpy()),
-    )
+    metadata = metadata[metadata["country"].isin(cfg["countries"])]
+    if cfg["task"] == "regression":
+        return (
+            tf.convert_to_tensor(metadata.loc[:, "id"].to_numpy()),
+            metadata["id"].astype(str).to_list(),
+            tf.convert_to_tensor(metadata.loc[:, cfg["targets"]].to_numpy()),
+        )
+    else:
+        # classification => need to one-hot encode
+        return (
+            tf.convert_to_tensor(metadata.loc[:, "id"].to_numpy()),
+            metadata["id"].astype(str).to_list(),
+            tf.convert_to_tensor(
+                cfg["oh_encoder"].transform(metadata[cfg["targets"]]).toarray()
+            ),
+        )
 
 
 def get_metadata_index(file_path, ids):
@@ -57,10 +76,10 @@ def process_path(file_path, ids, targets, cfg):
     return img, target
 
 
-def get_country_data(dataset, cfg, is_train, country):
+def get_country_data(dataset, cfg, is_train):
     # decode file, resize and get targets per image
     # load data for specific country only
-    ids, selected_files, targets_tf = get_metadata(is_train, cfg["targets"], country)
+    ids, selected_files, targets_tf = get_metadata(cfg, is_train)
     all_files_dict = {
         f.split(".")[0].split("/")[-1]: f
         for f in tf.io.gfile.glob(DATA_DIR + "/images/" + dataset + "/*/*.jpg")
@@ -144,18 +163,24 @@ def load_dataset(cfg, is_train: bool):
     """Preprocesses images and sets up the train, val or test set
 
     Args:
+        cfg (dict):
         is_train (bool): Whether to get training and validation data (True)
             or testing data (False)
-        targets (list): Targets for training
 
     Returns:
-        tuple of (train) or single (test) tf dataset: not loaded into memory
+        tuple of (train, val) or (test, test_count:int) tf dataset: not loaded into memory
     """
     dataset = "train" if is_train else "test"
-    country = "CH"
-    name = "_".join([dataset, country, str(cfg["img_height"]), str(cfg["img_width"])])
+    name = "_".join(
+        [
+            dataset,
+            "_".join(cfg["countries"]),
+            str(cfg["img_height"]),
+            str(cfg["img_width"]),
+        ]
+    )
     # this step might take a few minutes for train on CPU (linear CPU operation)
-    list_ds = get_country_data(dataset, cfg, is_train, country)
+    list_ds = get_country_data(dataset, cfg, is_train)
     if not os.path.isfile(PROCESSED_DATA_DIR + "x_" + name + ".npy") and not is_train:
         # test data not yet saved as numpy arrays (can be used for testing)
         save_country_data(list_ds, cfg, name)

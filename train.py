@@ -3,7 +3,6 @@ import os
 # needed for quantization-aware training in tensorflow > 2.15
 os.environ["TF_USE_LEGACY_KERAS"] = "1"
 import numpy as np
-import pickle
 import tensorflow as tf
 import tensorflow.keras as keras
 import tensorflow_model_optimization as tfmot

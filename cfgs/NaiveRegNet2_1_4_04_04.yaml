@@ -1,4 +1,7 @@
 model: naive_reg_net
+task: regression
+countries:
+  - CH
 img_height: 96
 img_width: 96
 targets:

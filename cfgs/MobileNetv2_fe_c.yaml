@@ -1,13 +1,12 @@
 model: mobile_net_v2_fe
-task: regression
+task: classification
 countries:
   - CH
 img_height: 224
 img_width: 224
 preprocessor: mobile_net_v2
 targets:
-  - latitude
-  - longitude
+  - region
 lr: 0.001
 optimizer: adam
 loss: mse
