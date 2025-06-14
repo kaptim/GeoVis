@@ -71,10 +71,10 @@ def qa_train(cfg):
     convert_tflite_to_c(cfg, train_type)
 
 
-def evaluate_model(cfg, train_type, mct, quantized=False):
+def evaluate_model(cfg, train_type, mct, tflite=False):
     # evaluate a checkpointed model on the test set
     test_ds, img_count = load_dataset(cfg, False)
-    if not quantized:
+    if not tflite:
         model = load_model(cfg, train_type, mct)
         results = model.evaluate(test_ds)
     else:

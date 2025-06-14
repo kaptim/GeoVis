@@ -18,6 +18,7 @@ def naive_conv_block(model, block_size, filters, kernel, strides, padding):
 
 
 def naive_reg_net(cfg):
+    # adaptable version of a CNN with regression output (latitude, longitude)
     model = keras.Sequential()
     # specify input dimension for .summary()
     model.add(keras.Input(shape=(cfg["img_height"], cfg["img_width"], 3)))
@@ -44,8 +45,29 @@ def naive_reg_net(cfg):
     return model
 
 
+def mobile_net_v2_fe(cfg):
+    # mobile net v2 with feature extraction
+    # TODO: for regression and classification pretty similar (probably also for naive net)
+    img_shape = (cfg["img_height"], cfg["img_width"], 3)
+    base_model = keras.applications.MobileNetV2(
+        weights="imagenet",
+        include_top=False,  # only the feature extraction layers
+        input_shape=img_shape,
+    )
+    # freeze weights of the feature extractor
+    base_model.trainable = False
+    # create model
+    inputs = keras.Input(shape=img_shape)
+    # training=False important in case of batch normalization layers
+    x = base_model(inputs, training=False)
+    x = keras.layers.GlobalAveragePooling2D()(x)
+    x = keras.layers.Dropout(cfg["dropout_dense"])(x)
+    outputs = keras.layers.Dense(2)(x)
+    return keras.Model(inputs, outputs)
+
+
 def create_model(cfg, train_type):
-    """Create and compiles a keras.Model based on the elements in cfg"""
+    """Create and compiles a keras.Model based on the values in cfg"""
     model = globals()[cfg["model"]](cfg)
     if train_type == "qat":
         qa_model = tfmot.quantization.keras.quantize_model(model)
