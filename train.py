@@ -22,7 +22,7 @@ def train_run(cfg, model, train_type):
 
     # best model (based on validation loss) should be saved automatically
     checkpoint_path = (
-        MODELS_PATH + "weights/" + cfg["path"] + train_type + "test.weights.h5"
+        MODELS_PATH + "weights/" + cfg["path"] + train_type + ".weights.h5"
     )
     print("Train: Saving weights in " + checkpoint_path)
     checkpoint_callback = keras.callbacks.ModelCheckpoint(
@@ -35,7 +35,7 @@ def train_run(cfg, model, train_type):
     )
     # save training and validation results
     csv_logger = keras.callbacks.CSVLogger(
-        RESULTS_PATH + cfg["path"] + train_type + "test.csv"
+        RESULTS_PATH + cfg["path"] + train_type + ".csv"
     )
 
     # TODO: lr scheduler?
@@ -78,7 +78,7 @@ def evaluate_model(cfg, train_type, mct, tflite=False):
         model = load_model(cfg, train_type, mct)
         results = model.evaluate(test_ds)
     else:
-        # quantized performance evaluation
+        # quantized performance evaluation (.tflite models)
         quantized_model_path = MODELS_PATH + cfg["path"] + train_type + ".tflite"
         interpreter = tf.lite.Interpreter(model_path=quantized_model_path)
         interpreter.allocate_tensors()
