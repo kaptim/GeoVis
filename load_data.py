@@ -53,7 +53,7 @@ def process_path(file_path, ids, targets, img_height, img_width):
     # function can be applied using a tensorflow map operation
     target = get_targets_per_file(file_path, ids, targets)
     img = tf.io.read_file(file_path)
-    img = tf.io.decode_jpeg(img, channels=3)
+    img = decode_img(img_height, img_width, img)
     return img, target
 
 
@@ -70,9 +70,7 @@ def get_country_data(dataset, cfg, is_train, country):
     ds = tf.data.Dataset.from_tensor_slices(selected_files_paths)
     # decode image, add targets
     ds = ds.map(
-        lambda file_path: process_path(
-            file_path, ids, targets_tf, cfg["img_height"], cfg["img_width"]
-        ),
+        lambda file_path: process_path(file_path, ids, targets_tf),
         num_parallel_calls=tf.data.AUTOTUNE,
     )
     return ds
@@ -122,16 +120,14 @@ def preprocess_data(ds, cfg, is_train: bool):
                 keras.layers.RandomCrop(
                     int(cfg["img_height"] * 0.9), int(cfg["img_width"] * 0.9)
                 ),
+                # random cropping changes the size of the image => need to resize again
+                keras.layers.Resizing(cfg["img_height"], cfg["img_width"]),
             ]
         )
         ds = ds.map(
             lambda x, y: (augmentation(x, training=True), y),
             num_parallel_calls=tf.data.AUTOTUNE,
         )
-    # resize image
-    resizing = keras.layers.Resizing(cfg["img_height"], cfg["img_width"])
-    ds = ds.map(lambda x, y: (resizing(x), y), num_parallel_calls=tf.data.AUTOTUNE)
-
     return ds.prefetch(buffer_size=tf.data.AUTOTUNE)
 
 
@@ -150,7 +146,7 @@ def load_dataset(cfg, is_train: bool):
     country = "CH"
     name = "_".join([dataset, country, str(cfg["img_height"]), str(cfg["img_width"])])
     # this step might take a few minutes for train on CPU (linear CPU operation)
-    list_ds = get_country_data(dataset, is_train, cfg, country)
+    list_ds = get_country_data(dataset, cfg, is_train, country)
     if not os.path.isfile(PROCESSED_DATA_DIR + "x_" + name + ".npy") and not is_train:
         # test data not yet saved as numpy arrays (can be used for testing)
         save_country_data(list_ds, cfg, name)
