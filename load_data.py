@@ -53,14 +53,14 @@ def process_path(file_path, ids, targets, img_height, img_width):
     # function can be applied using a tensorflow map operation
     target = get_targets_per_file(file_path, ids, targets)
     img = tf.io.read_file(file_path)
-    img = decode_img(img_height, img_width, img)
+    img = tf.io.decode_jpeg(img, channels=3)
     return img, target
 
 
-def get_country_data(dataset, is_train, targets, img_height, img_width, country):
+def get_country_data(dataset, cfg, is_train, country):
     # decode file, resize and get targets per image
     # load data for specific country only
-    ids, selected_files, targets_tf = get_metadata(is_train, targets, country)
+    ids, selected_files, targets_tf = get_metadata(is_train, cfg["targets"], country)
     all_files_dict = {
         f.split(".")[0].split("/")[-1]: f
         for f in tf.io.gfile.glob(DATA_DIR + "/images/" + dataset + "/*/*.jpg")
@@ -71,19 +71,26 @@ def get_country_data(dataset, is_train, targets, img_height, img_width, country)
     # decode image, add targets
     ds = ds.map(
         lambda file_path: process_path(
-            file_path, ids, targets_tf, img_height, img_width
+            file_path, ids, targets_tf, cfg["img_height"], cfg["img_width"]
         ),
         num_parallel_calls=tf.data.AUTOTUNE,
     )
     return ds
 
 
-def save_country_data(ds, img_height, img_width, num_targets, name):
+def save_country_data(ds, cfg, name):
     # save tensorflow dataset as numpy arrays
     x_numpy = np.empty(
-        (tf.data.experimental.cardinality(ds).numpy(), img_height, img_width, 3)
+        (
+            tf.data.experimental.cardinality(ds).numpy(),
+            cfg["img_height"],
+            cfg["img_width"],
+            3,
+        )
     )
-    y_numpy = np.empty((tf.data.experimental.cardinality(ds).numpy(), num_targets))
+    y_numpy = np.empty(
+        (tf.data.experimental.cardinality(ds).numpy(), len(cfg["targets"]))
+    )
     for i, data in enumerate(ds):
         x_numpy[i] = data[0].numpy()
         y_numpy[i] = data[1].numpy()
@@ -95,7 +102,7 @@ def save_country_data(ds, img_height, img_width, num_targets, name):
     np.save(PROCESSED_DATA_DIR + "y_" + name + "_q", y_numpy.astype(np.uint8))
 
 
-def preprocess_data(ds, is_train: bool, img_height, img_width):
+def preprocess_data(ds, cfg, is_train: bool):
     # preprocessing which is necessary for structured training in python
     # rescale RGB values to [0, 1]
     # rescaling on device done using a python script
@@ -110,17 +117,20 @@ def preprocess_data(ds, is_train: bool, img_height, img_width):
         # only augment train set
         augmentation = tf.keras.Sequential(
             [
-                keras.layers.RandomFlip("horizontal"),
+                keras.layers.RandomFlip("horizontal"),  # left-right flip
                 keras.layers.RandomRotation(0.1, fill_mode="nearest"),
-                keras.layers.RandomCrop(int(img_height * 0.9), int(img_width * 0.9)),
-                # some of the augmentation operations change the size of the image
-                keras.layers.Resizing(img_height, img_width),
+                keras.layers.RandomCrop(
+                    int(cfg["img_height"] * 0.9), int(cfg["img_width"] * 0.9)
+                ),
             ]
         )
         ds = ds.map(
             lambda x, y: (augmentation(x, training=True), y),
             num_parallel_calls=tf.data.AUTOTUNE,
         )
+    # resize image
+    resizing = keras.layers.Resizing(cfg["img_height"], cfg["img_width"])
+    ds = ds.map(lambda x, y: (resizing(x), y), num_parallel_calls=tf.data.AUTOTUNE)
 
     return ds.prefetch(buffer_size=tf.data.AUTOTUNE)
 
@@ -137,17 +147,13 @@ def load_dataset(cfg, is_train: bool):
         tuple of (train) or single (test) tf dataset: not loaded into memory
     """
     dataset = "train" if is_train else "test"
-    # this step might take a few minutes for train (linear CPU operation)
-    img_height = cfg["img_height"]
-    img_width = cfg["img_width"]
     country = "CH"
-    name = "_".join([dataset, country, str(img_height), str(img_width)])
-    list_ds = get_country_data(
-        dataset, is_train, cfg["targets"], img_height, img_width, country
-    )
+    name = "_".join([dataset, country, str(cfg["img_height"]), str(cfg["img_width"])])
+    # this step might take a few minutes for train on CPU (linear CPU operation)
+    list_ds = get_country_data(dataset, is_train, cfg, country)
     if not os.path.isfile(PROCESSED_DATA_DIR + "x_" + name + ".npy") and not is_train:
-        # test data not yet saved as numpy arrays
-        save_country_data(list_ds, img_height, img_width, len(cfg["targets"]), name)
+        # test data not yet saved as numpy arrays (can be used for testing)
+        save_country_data(list_ds, cfg, name)
 
     image_count = tf.data.experimental.cardinality(list_ds).numpy()
     print(str(image_count) + " images in the " + dataset + " set")
@@ -156,8 +162,6 @@ def load_dataset(cfg, is_train: bool):
         val_size = int(image_count * 0.2)
         train_ds = list_ds.skip(val_size)
         val_ds = list_ds.take(val_size)
-        return preprocess_data(train_ds, True, img_height, img_width), preprocess_data(
-            val_ds, False, img_height, img_width
-        )
+        return preprocess_data(train_ds, cfg, True), preprocess_data(val_ds, cfg, False)
     else:
-        return preprocess_data(list_ds, False, img_height, img_width), image_count
+        return preprocess_data(list_ds, cfg, False), image_count

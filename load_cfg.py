@@ -27,6 +27,13 @@ def convert_optimizer(optimizer_str, lr):
         return ValueError(optimizer_str + " not a known optimizer")
 
 
+def convert_preprocessor(preprocessor_str):
+    if preprocessor_str == "mobile_net_v2":
+        return keras.optimizers.Adam(lr)
+    else:
+        return ValueError(optimizer_str + " not a known optimizer")
+
+
 def load_cfg(cfg_path):
     # cfg_path supplied when running main
     # initialise checkpoint path, set up classes (e.g., MSE loss class instead of mse)

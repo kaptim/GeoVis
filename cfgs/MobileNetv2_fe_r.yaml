@@ -12,4 +12,4 @@ epochs: 50
 metrics:
   - mse
   - mae
-dropout_dense: 0.4
+dropout_dense: 0.2
