@@ -48,12 +48,12 @@ def decode_img(img_height, img_width, img):
     return img
 
 
-def process_path(file_path, ids, targets, img_height, img_width):
+def process_path(file_path, ids, targets, cfg):
     # taken from the tensorflow documentation: read and decode image
     # function can be applied using a tensorflow map operation
     target = get_targets_per_file(file_path, ids, targets)
     img = tf.io.read_file(file_path)
-    img = decode_img(img_height, img_width, img)
+    img = decode_img(cfg["img_height"], cfg["img_width"], img)
     return img, target
 
 
@@ -70,7 +70,7 @@ def get_country_data(dataset, cfg, is_train, country):
     ds = tf.data.Dataset.from_tensor_slices(selected_files_paths)
     # decode image, add targets
     ds = ds.map(
-        lambda file_path: process_path(file_path, ids, targets_tf),
+        lambda file_path: process_path(file_path, ids, targets_tf, cfg),
         num_parallel_calls=tf.data.AUTOTUNE,
     )
     return ds
@@ -103,12 +103,21 @@ def save_country_data(ds, cfg, name):
 def preprocess_data(ds, cfg, is_train: bool):
     # preprocessing which is necessary for structured training in python
     # rescale RGB values to [0, 1]
-    # rescaling on device done using a python script
-    scaling = keras.layers.Rescaling(scale=1.0 / 255)
-    ds = ds.map(lambda x, y: (scaling(x), y), num_parallel_calls=tf.data.AUTOTUNE)
+    if cfg["preprocessor"] is None:
+        # default scaling
+        scaling = keras.layers.Rescaling(scale=1.0 / 255)
+        ds = ds.map(lambda x, y: (scaling(x), y), num_parallel_calls=tf.data.AUTOTUNE)
+    else:
+        # use custom preprocessor for transfer learning
+        ds = ds.map(
+            lambda x, y: (cfg["preprocessor"](x), y),
+            num_parallel_calls=tf.data.AUTOTUNE,
+        )
     if is_train:
         # only shuffle train set
-        ds = ds.shuffle(buffer_size=BATCH_SIZE)
+        # set buffer_size for lower memory consumption
+        # (no buffer_size set => all data loaded into memory)
+        ds = ds.shuffle(buffer_size=50)
     ds = ds.batch(BATCH_SIZE)
 
     if is_train:
@@ -118,7 +127,7 @@ def preprocess_data(ds, cfg, is_train: bool):
                 keras.layers.RandomFlip("horizontal"),  # left-right flip
                 keras.layers.RandomRotation(0.1, fill_mode="nearest"),
                 keras.layers.RandomCrop(
-                    int(cfg["img_height"] * 0.9), int(cfg["img_width"] * 0.9)
+                    int(cfg["img_height"] * 0.95), int(cfg["img_width"] * 0.95)
                 ),
                 # random cropping changes the size of the image => need to resize again
                 keras.layers.Resizing(cfg["img_height"], cfg["img_width"]),

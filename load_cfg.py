@@ -8,7 +8,7 @@ def convert_loss(loss_str):
     if loss_str == "mse":
         return keras.losses.MSE
     else:
-        return ValueError(loss_str + " not a known loss")
+        raise ValueError(loss_str + " not a known loss")
 
 
 def convert_metric(metric_str):
@@ -17,21 +17,21 @@ def convert_metric(metric_str):
     elif metric_str == "mae":
         return keras.metrics.MeanAbsoluteError()
     else:
-        return ValueError(metric_str + " not a known metric")
+        raise ValueError(metric_str + " not a known metric")
 
 
 def convert_optimizer(optimizer_str, lr):
     if optimizer_str == "adam":
         return keras.optimizers.Adam(lr)
     else:
-        return ValueError(optimizer_str + " not a known optimizer")
+        raise ValueError(optimizer_str + " not a known optimizer")
 
 
 def convert_preprocessor(preprocessor_str):
     if preprocessor_str == "mobile_net_v2":
-        return keras.optimizers.Adam(lr)
+        return keras.applications.mobilenet_v2.preprocess_input
     else:
-        return ValueError(optimizer_str + " not a known optimizer")
+        return None
 
 
 def load_cfg(cfg_path):
@@ -43,4 +43,5 @@ def load_cfg(cfg_path):
     cfg["loss"] = convert_loss(cfg["loss"])
     cfg["metrics"] = [convert_metric(metric) for metric in cfg["metrics"]]
     cfg["optimizer"] = convert_optimizer(cfg["optimizer"], cfg["lr"])
+    cfg["preprocessor"] = convert_preprocessor(cfg.get("preprocessor", None))
     return cfg
