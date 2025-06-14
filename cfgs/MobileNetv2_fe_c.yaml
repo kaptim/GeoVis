@@ -9,9 +9,8 @@ targets:
   - region
 lr: 0.001
 optimizer: adam
-loss: mse
+loss: ce
 epochs: 200
 metrics:
-  - mse
-  - mae
+  - acc
 dropout_dense: 0.2

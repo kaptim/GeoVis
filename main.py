@@ -7,7 +7,7 @@ from load_cfg import load_cfg
 import train
 
 # cfg = load_cfg("MobileNetv2_fe_c.yaml")
-# example usage: python main.py NaiveRegNet2_1_4_04_04.yaml fp
+# example usage: python main.py MobileNetv2_fe_c.yaml fp
 # cfg = load_cfg("NaiveRegNet2_1_4_04_04.yaml")
 
 

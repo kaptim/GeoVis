@@ -42,3 +42,6 @@ def visualise_error_per_epoch(cfg, train_type):
     plt.legend()
     plt.xlim([history["epoch"].min() - 0.5, history["epoch"].max() + 0.5])
     plt.show()
+
+
+# TODO: confusion matrix

@@ -1,4 +1,4 @@
-model: naive_reg_net
+model: naive_net
 task: regression
 countries:
   - CH

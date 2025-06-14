@@ -10,6 +10,8 @@ CFGS_FOLDER = "/home/kaptim/eth/mlmc/project/bottom_up/code/cfgs"
 def convert_loss(loss_str):
     if loss_str == "mse":
         return keras.losses.MSE
+    elif loss_str == "ce":
+        return keras.losses.CategoricalCrossentropy(from_logits=True)
     else:
         raise ValueError(loss_str + " not a known loss")
 
@@ -19,6 +21,8 @@ def convert_metric(metric_str):
         return keras.metrics.MeanSquaredError()
     elif metric_str == "mae":
         return keras.metrics.MeanAbsoluteError()
+    elif metric_str == "acc":
+        return keras.metrics.CategoricalAccuracy()
     else:
         raise ValueError(metric_str + " not a known metric")
 

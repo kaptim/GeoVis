@@ -17,10 +17,10 @@ def naive_conv_block(model, block_size, filters, kernel, strides, padding):
         model.add(keras.layers.Activation("relu"))
 
 
-def naive_reg_net(cfg):
-    # adaptable version of a CNN with regression output (latitude, longitude)
+def naive_net(cfg):
+    # adaptable version of a CNN with regression or classification output
     model = keras.Sequential()
-    # specify input dimension for .summary()
+    # specify input dimension
     model.add(keras.Input(shape=(cfg["img_height"], cfg["img_width"], 3)))
     filters = cfg["filters"]
 
@@ -41,7 +41,11 @@ def naive_reg_net(cfg):
     model.add(keras.layers.Flatten())
     model.add(keras.layers.Dense(cfg["dense-1"], activation="relu"))
     model.add(tf.keras.layers.Dropout(cfg["dropout_dense"]))
-    model.add(keras.layers.Dense(2))
+    if cfg["task"] == "regression":
+        model.add(keras.layers.Dense(len(cfg["targets"])))
+    else:
+        # classification: tensorflow discourages to add softmax activation function
+        model.add(keras.layers.Dense(len(cfg["classes"])))
     return model
 
 
@@ -62,7 +66,12 @@ def mobile_net_v2_fe(cfg):
     x = base_model(inputs, training=False)
     x = keras.layers.GlobalAveragePooling2D()(x)
     x = keras.layers.Dropout(cfg["dropout_dense"])(x)
-    outputs = keras.layers.Dense(2)(x)
+    if cfg["task"] == "regression":
+        outputs = keras.layers.Dense(len(cfg["targets"]))(x)
+    else:
+        # classification: tensorflow discourages to add softmax activation function
+        # (numerical instabilities during training)
+        outputs = keras.layers.Dense(len(cfg["classes"]))(x)
     return keras.Model(inputs, outputs)
 
 
