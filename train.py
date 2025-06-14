@@ -51,7 +51,7 @@ def train_run(cfg, model, train_type):
 def fp_train(cfg):
     # floating-point training (no restrictions on the parameters)
     model = create_model(cfg, "")
-    train_run(cfg, model, "", "")
+    train_run(cfg, model, "")
 
 
 def qa_train(cfg):
@@ -65,7 +65,7 @@ def qa_train(cfg):
         metrics=cfg["metrics"],
     )
     train_type = "qat"
-    train_run(cfg, qa_model, train_type, "")
+    train_run(cfg, qa_model, train_type)
     print("QATrain: Quantize")
     quantize_post_training(cfg, train_type)
     convert_tflite_to_c(cfg, train_type)

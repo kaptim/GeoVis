@@ -1,0 +1,15 @@
+model: mobile_net_v2_fe
+img_height: 224
+img_width: 224
+preprocessor: mobile_net_v2
+targets:
+  - latitude
+  - longitude
+lr: 0.001
+optimizer: adam
+loss: mse
+epochs: 50
+metrics:
+  - mse
+  - mae
+dropout_dense: 0.4
