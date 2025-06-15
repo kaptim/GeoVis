@@ -39,8 +39,6 @@ def train_run(cfg, model, train_type):
         RESULTS_PATH + cfg["path"] + train_type + ".csv"
     )
 
-    # TODO: lr scheduler?
-
     model.fit(
         train_ds,
         validation_data=val_ds,

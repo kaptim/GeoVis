@@ -150,20 +150,48 @@ def naive_net(cfg):
     return model
 
 
-def mobile_net_v2_fe(cfg):
-    # mobile net v2 with feature extraction
+def mobile_net_v2(cfg):
+    # mobile net v2 with feature extraction / fine tuning capabilities
     img_shape = (cfg["img_height"], cfg["img_width"], 3)
+    if cfg["subtask"] == "fine-tuning":
+        # fine-tuning: you should pre-train a model on the feature-extraction layers first
+        pre_trained_cfg = {key: val for key, val in cfg.items()}
+        # change task and path to load the correct model
+        pre_trained_cfg["subtask"] = "feature-extraction"
+        replace_path_idx = pre_trained_cfg["path"].find("ft")
+        pre_trained_cfg["path"] = (
+            pre_trained_cfg["path"][:replace_path_idx]
+            + "fe"
+            + pre_trained_cfg["path"][replace_path_idx + 2 :]
+        )
+        pretrained_model = load_model(
+            pre_trained_cfg, pre_trained_cfg["train_type"], ""
+        )
+        # unfreeze the whole network or the last block
+        pretrained_model.trainable = True
+        if cfg["fine_tune_at"] == "last":
+            # only keep last "block" of mobile net as trainable
+            mobile_net_block = pretrained_model.layers[1]
+            for layer in mobile_net_block.layers[:-3]:
+                layer.trainable = False
+        # whole network: just keep model trainable
+        return pretrained_model
+
     base_model = tf.keras.applications.MobileNetV2(
-        weights="imagenet",
+        weights=(None if cfg["subtask"] == "from_scratch" else "imagenet"),
         include_top=False,  # only the feature extraction layers
         input_shape=img_shape,
     )
-    # freeze weights of the feature extractor
-    base_model.trainable = False
-    # create model
+    if cfg["subtask"] == "feature-extraction":
+        # feature extraction: freeze weights
+        base_model.trainable = False
+    # from-scratch training: just keep base_model trainable
+
     inputs = tf.keras.Input(shape=img_shape)
     # training=False important in case of batch normalization layers
-    x = base_model(inputs, training=False)
+    x = base_model(
+        inputs, training=(True if cfg["subtask"] == "from_scratch" else False)
+    )
     x = tf.keras.layers.GlobalAveragePooling2D()(x)
     x = tf.keras.layers.Dropout(cfg["dropout_dense"])(x)
     if cfg["task"] == "regression":
@@ -175,27 +203,51 @@ def mobile_net_v2_fe(cfg):
     return tf.keras.Model(inputs, outputs)
 
 
-def clip_fe(cfg):
-    # CLIP using feature extraction
-    # TODO: lora?
+def clip(cfg):
+    # CLIP with feature extraction / fine tuning capabilities
+    if cfg["subtask"] == "fine-tuning":
+        # fine-tuning: you should pre-train a model on the feature-extraction layers first
+        pre_trained_cfg = {key: val for key, val in cfg.items()}
+        pre_trained_cfg["subtask"] = "feature-extraction"
+        replace_path_idx = pre_trained_cfg["path"].find("ft")
+        pre_trained_cfg["path"] = (
+            pre_trained_cfg["path"][:replace_path_idx]
+            + "fe"
+            + pre_trained_cfg["path"][replace_path_idx + 2 :]
+        )
+        pretrained_model = load_model(
+            pre_trained_cfg, pre_trained_cfg["train_type"], ""
+        )
+        vision_encoder = pretrained_model.layers[1]
+        vision_encoder.trainable = True
+        if cfg["fine_tune_at"] == "last":
+            # only keep last "block" of clip as trainable
+            for layer in vision_encoder.layers[:-2]:
+                layer.trainable = False
+        return pretrained_model
+
     # kerashub: regular keras model
-    clip = CLIPBackbone.from_preset("clip_vit_b_32_laion2b_s34b_b79k")
+    clip = CLIPBackbone.from_preset(
+        "clip_vit_b_32_laion2b_s34b_b79k",
+        load_weights=(False if cfg["subtask"] == "from_scratch" else True),
+    )
     vision_encoder = clip.vision_encoder
     vision_pooler = clip.vision_pooler
-    vision_projection = clip.vision_projection
 
-    # freeze the vision embedding layers
-    vision_encoder.trainable = False
-    vision_pooler.trainable = False
-    # vision_projection.trainable = False
+    if cfg["subtask"] == "feature-extraction":
+        # feature extraction: freeze the vision embedding layers
+        # pooler: not trainable anyways
+        vision_encoder.trainable = False
+    # from-scratch training: just keep clip trainable
 
     inputs = clip.inputs[0]
-    x = vision_encoder(inputs, training=False)
-    x = vision_pooler(x, training=False)
-    # x = vision_projection(x, training=False)
+    x = vision_encoder(
+        inputs, training=(True if cfg["subtask"] == "from_scratch" else False)
+    )
+    x = vision_pooler(x)
 
-    x = keras.layers.Dropout(cfg["dropout_dense"])(x)
     x = keras.layers.Dense(cfg["dense-1"])(x)
+    x = keras.layers.Dropout(cfg["dropout_dense"])(x)
     if cfg["task"] == "regression":
         outputs = keras.layers.Dense(len(cfg["targets"]))(x)
     else:

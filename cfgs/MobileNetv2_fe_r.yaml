@@ -1,5 +1,6 @@
-model: mobile_net_v2_fe
+model: mobile_net_v2
 task: regression
+subtask: feature-extraction
 countries:
   - CH
 img_height: 224
@@ -11,7 +12,7 @@ targets:
 lr: 0.001
 optimizer: adam
 loss: mse
-epochs: 300
+epochs: 200
 metrics:
   - mse
   - mae

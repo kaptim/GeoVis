@@ -89,6 +89,23 @@ def check_targets(cfg):
         raise ValueError("More than one target is not supported for classification")
 
 
+def check_subtask(cfg):
+    if (
+        cfg["subtask"] not in ["feature-extraction", "fine-tuning", "from-scratch"]
+        and not None
+    ):
+        raise ValueError(cfg["subtask"] + " not a known task")
+    if cfg["subtask"] == "fine-tuning":
+        if cfg["fine_tune_at"] not in ["last", "full"]:
+            raise ValueError(
+                cfg["fine_tune_at"] + " not a known fine-tuning configuration"
+            )
+        if not cfg["qat"]:
+            cfg["train_type"] = ""
+        else:
+            cfg["train_type"] = "qat"
+
+
 def load_cfg(cfg_path):
     # cfg_path supplied when running main
     # initialise checkpoint path, set up classes (e.g., MSE loss class instead of mse)
@@ -101,4 +118,5 @@ def load_cfg(cfg_path):
     cfg["preprocessor"] = convert_preprocessor(cfg.get("preprocessor", None))
     add_oh_encoder(cfg)
     check_targets(cfg)
+    check_subtask(cfg)
     return cfg

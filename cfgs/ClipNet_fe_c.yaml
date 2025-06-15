@@ -1,5 +1,6 @@
-model: clip_fe
+model: clip
 task: classification
+subtask: feature-extraction
 countries:
   - CH
 img_height: 224
@@ -10,8 +11,8 @@ targets:
 lr: 0.001
 optimizer: adam
 loss: ce
-epochs: 300
+epochs: 200
 metrics:
   - acc
 dense-1: 64
-dropout_dense: 0.3
+dropout_dense: 0.5
