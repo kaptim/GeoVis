@@ -10,7 +10,7 @@ img_width: 224
 preprocessor: clip
 targets:
   - region
-lr: 0.001
+lr: 0.0002
 optimizer: adam
 loss: ce
 epochs: 200

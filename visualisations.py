@@ -1,10 +1,11 @@
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from train import RESULTS_PATH
 
 
-def visualise_10_images(ds):
-    """Show ten images in the dataset. Need to build the dataset first
+def visualise_10_images(cfg, ds):
+    """Show ten images in the dataset
 
     Args:
         ds (tf dataset)
@@ -16,9 +17,12 @@ def visualise_10_images(ds):
         ax = plt.subplot(3, 3, i + 1)
         plt.imshow(image_batch[i].numpy())
         label = label_batch[i].numpy()
-        plt.title(
-            "lat: " + str(round(label[0], 2)) + ", long: " + str(round(label[1], 2))
-        )
+        if cfg["task"] == "regression":
+            plt.title(
+                "lat: " + str(round(label[0], 2)) + ", long: " + str(round(label[1], 2))
+            )
+        else:
+            plt.title(cfg["classes"][np.argmax(label)])
         plt.axis("off")
 
 
