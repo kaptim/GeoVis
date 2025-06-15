@@ -111,41 +111,6 @@ class Distiller(tf.keras.Model):
 # TODO: feature-based distillation
 
 
-def evaluate_clip(cfg):
-    from load_data import load_dataset
-    import numpy as np
-
-    test_ds, img_count = load_dataset(cfg, False)
-
-    clip = CLIPBackbone.from_preset(
-        "clip_vit_b_32_laion2b_s34b_b79k",
-        load_weights=(False if cfg["subtask"] == "from_scratch" else True),
-    )
-    tokenizer = CLIPTokenizer.from_preset(
-        "clip_vit_b_32_laion2b_s34b_b79k", sequence_length=15
-    )
-    tokens = tokenizer.tokenize(
-        ["An image taken in " + c for c in cfg["classes"].tolist()]
-    )
-
-    correct = 0
-    test_ds = test_ds.unbatch().batch(1)
-    for i, data in enumerate(test_ds):
-        output = clip(
-            {
-                "images": data[0],
-                "token_ids": tokens,
-            }
-        )
-        if (
-            tf.argmax(output["vision_logits"], axis=1)[0].numpy()
-            == tf.argmax(data[1], axis=1)[0].numpy()
-        ):
-            correct += 1
-
-    print(correct / img_count)
-
-
 def naive_conv_block(model, block_size, filters, kernel, strides, padding):
     for i in range(block_size):
         model.add(tf.keras.layers.Conv2D(filters, kernel, strides, padding))
