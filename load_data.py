@@ -6,7 +6,7 @@ import tensorflow as tf
 import tensorflow.keras as keras
 from get_data import DATA_DIR
 
-BATCH_SIZE = 12
+BATCH_SIZE = 256
 PROCESSED_DATA_DIR = "/home/kaptim/eth/mlmc/project/bottom_up/code/processed_data/"
 
 # set seed for reproducibility
@@ -136,8 +136,8 @@ def preprocess_data(ds, cfg, is_train: bool):
         # only shuffle train set
         # set buffer_size for lower memory consumption
         # (no buffer_size set => all data loaded into memory)
-        ds = ds.shuffle(buffer_size=50)
-    ds = ds.batch(BATCH_SIZE)
+        ds = ds.shuffle(buffer_size=100)
+    ds = ds.batch(BATCH_SIZE, num_parallel_calls=tf.data.AUTOTUNE)
 
     if is_train:
         # only augment train set
@@ -181,9 +181,6 @@ def load_dataset(cfg, is_train: bool):
     )
     # this step might take a few minutes for train on CPU (linear CPU operation)
     list_ds = get_country_data(dataset, cfg, is_train)
-    if not os.path.isfile(PROCESSED_DATA_DIR + "x_" + name + ".npy") and not is_train:
-        # test data not yet saved as numpy arrays (can be used for testing)
-        save_country_data(list_ds, cfg, name)
 
     image_count = tf.data.experimental.cardinality(list_ds).numpy()
     print(str(image_count) + " images in the " + dataset + " set")

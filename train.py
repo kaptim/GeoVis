@@ -28,8 +28,10 @@ def train_run(cfg, model, train_type):
     print("Train: Saving weights in " + checkpoint_path)
     checkpoint_callback = keras.callbacks.ModelCheckpoint(
         filepath=checkpoint_path,
-        monitor="val_loss",
-        mode="min",
+        monitor=(
+            "val_loss" if cfg["task"] == "regression" else "val_categorical_accuracy"
+        ),
+        mode=("min" if cfg["task"] == "regression" else "max"),
         save_best_only=True,
         save_weights_only=True,
         verbose=1,
@@ -86,8 +88,13 @@ def evaluate_model(cfg, train_type, mct, tflite=False):
         output_details = interpreter.get_output_details()[0]
 
         test_ds = test_ds.unbatch()
-        y_pred = np.empty((img_count, len(cfg["targets"])), dtype=int)
-        y_true = np.empty((img_count, len(cfg["targets"])), dtype=int)
+        # TODO: evaluate classification
+        if cfg["task"] == "regression":
+            y_pred = np.empty((img_count, len(cfg["targets"])), dtype=int)
+            y_true = np.empty((img_count, len(cfg["targets"])), dtype=int)
+        else:
+            y_pred = np.empty((img_count, len(cfg["classes"])), dtype=int)
+            y_true = np.empty((img_count, len(cfg["classes"])), dtype=int)
 
         for i, data in enumerate(test_ds):
             test_x = data[0]
@@ -110,5 +117,4 @@ def evaluate_model(cfg, train_type, mct, tflite=False):
         for metric in cfg["metrics"]:
             results.append(np.mean(metric(y_true, y_pred)).item())
 
-    # TODO: beautify results
     print(results)

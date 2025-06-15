@@ -3,7 +3,6 @@ task: classification
 subtask: feature-extraction
 countries:
   - CH
-  - EC
 img_height: 224
 img_width: 224
 preprocessor: clip
@@ -17,4 +16,4 @@ metrics:
   - acc
 group_norm: 4
 dense-1: 512
-dropout_dense: 0.5
+dropout_dense: 0.7

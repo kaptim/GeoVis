@@ -8,7 +8,7 @@ os.environ["TF_USE_LEGACY_KERAS"] = "1"
 import tensorflow as tf
 import tensorflow_model_optimization as tfmot
 import keras
-from keras_hub.models import CLIPBackbone
+from keras_hub.models import CLIPBackbone, CLIPTokenizer
 
 MODELS_PATH = "/home/kaptim/eth/mlmc/project/bottom_up/code/saved_models/"
 
@@ -109,6 +109,41 @@ class Distiller(tf.keras.Model):
 
 
 # TODO: feature-based distillation
+
+
+def evaluate_clip(cfg):
+    from load_data import load_dataset
+    import numpy as np
+
+    test_ds, img_count = load_dataset(cfg, False)
+
+    clip = CLIPBackbone.from_preset(
+        "clip_vit_b_32_laion2b_s34b_b79k",
+        load_weights=(False if cfg["subtask"] == "from_scratch" else True),
+    )
+    tokenizer = CLIPTokenizer.from_preset(
+        "clip_vit_b_32_laion2b_s34b_b79k", sequence_length=15
+    )
+    tokens = tokenizer.tokenize(
+        ["An image taken in " + c for c in cfg["classes"].tolist()]
+    )
+
+    correct = 0
+    test_ds = test_ds.unbatch().batch(1)
+    for i, data in enumerate(test_ds):
+        output = clip(
+            {
+                "images": data[0],
+                "token_ids": tokens,
+            }
+        )
+        if (
+            tf.argmax(output["vision_logits"], axis=1)[0].numpy()
+            == tf.argmax(data[1], axis=1)[0].numpy()
+        ):
+            correct += 1
+
+    print(correct / img_count)
 
 
 def naive_conv_block(model, block_size, filters, kernel, strides, padding):
@@ -246,11 +281,13 @@ def clip(cfg):
     )
     x = vision_pooler(x)
     # architecture inspired by the OSV-5M paper
+    x = keras.layers.Dropout(cfg["dropout_dense"])(x)
     x = keras.layers.Dense(x.shape[1])(x)
     x = keras.layers.GroupNormalization(groups=cfg["group_norm"])(x)
+    x = keras.layers.Dropout(cfg["dropout_dense"])(x)
     x = keras.layers.Dense(cfg["dense-1"])(x)
     x = keras.layers.GroupNormalization(groups=cfg["group_norm"])(x)
-    # x = keras.layers.Dropout(cfg["dropout_dense"])(x)
+    x = keras.layers.Dropout(cfg["dropout_dense"])(x)
     if cfg["task"] == "regression":
         outputs = keras.layers.Dense(len(cfg["targets"]))(x)
     else:
