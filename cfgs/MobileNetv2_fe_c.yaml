@@ -10,7 +10,7 @@ targets:
 lr: 0.001
 optimizer: adam
 loss: ce
-epochs: 200
+epochs: 300
 metrics:
   - acc
 dropout_dense: 0.2

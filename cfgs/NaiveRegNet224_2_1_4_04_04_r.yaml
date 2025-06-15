@@ -2,15 +2,15 @@ model: naive_net
 task: regression
 countries:
   - CH
-img_height: 96
-img_width: 96
+img_height: 224
+img_width: 224
 targets:
   - latitude
   - longitude
 lr: 0.001
 optimizer: adam
 loss: mse
-epochs: 100
+epochs: 200
 metrics:
   - mse
   - mae

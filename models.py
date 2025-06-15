@@ -108,6 +108,9 @@ class Distiller(tf.keras.Model):
         return results
 
 
+# TODO: feature-based distillation
+
+
 def naive_conv_block(model, block_size, filters, kernel, strides, padding):
     for i in range(block_size):
         model.add(tf.keras.layers.Conv2D(filters, kernel, strides, padding))
@@ -184,14 +187,15 @@ def clip_fe(cfg):
     # freeze the vision embedding layers
     vision_encoder.trainable = False
     vision_pooler.trainable = False
-    vision_projection.trainable = False
+    # vision_projection.trainable = False
 
     inputs = clip.inputs[0]
     x = vision_encoder(inputs, training=False)
-    x = vision_pooler(x)
-    x = vision_projection(x)
+    x = vision_pooler(x, training=False)
+    # x = vision_projection(x, training=False)
 
     x = keras.layers.Dropout(cfg["dropout_dense"])(x)
+    x = keras.layers.Dense(cfg["dense-1"])(x)
     if cfg["task"] == "regression":
         outputs = keras.layers.Dense(len(cfg["targets"]))(x)
     else:

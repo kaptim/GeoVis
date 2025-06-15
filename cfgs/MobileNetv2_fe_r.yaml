@@ -11,7 +11,7 @@ targets:
 lr: 0.001
 optimizer: adam
 loss: mse
-epochs: 200
+epochs: 300
 metrics:
   - mse
   - mae

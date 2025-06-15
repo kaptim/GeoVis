@@ -1,19 +1,17 @@
 model: clip_fe
-task: regression
+task: classification
 countries:
   - CH
 img_height: 224
 img_width: 224
 preprocessor: clip
 targets:
-  - latitude
-  - longitude
+  - region
 lr: 0.001
 optimizer: adam
-loss: mse
+loss: ce
 epochs: 300
 metrics:
-  - mse
-  - mae
+  - acc
 dense-1: 64
 dropout_dense: 0.3
