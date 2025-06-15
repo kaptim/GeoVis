@@ -16,5 +16,6 @@ epochs: 200
 metrics:
   - mse
   - mae
+group_norm: 4
 dense-1: 64
 dropout_dense: 0.5

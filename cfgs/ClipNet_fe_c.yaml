@@ -14,5 +14,6 @@ loss: ce
 epochs: 200
 metrics:
   - acc
-dense-1: 64
+group_norm: 4
+dense-1: 512
 dropout_dense: 0.5

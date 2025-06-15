@@ -245,9 +245,12 @@ def clip(cfg):
         inputs, training=(True if cfg["subtask"] == "from_scratch" else False)
     )
     x = vision_pooler(x)
-
+    # architecture inspired by the OSV-5M paper
+    x = keras.layers.Dense(x.shape[1])(x)
+    x = keras.layers.GroupNormalization(groups=cfg["group_norm"])(x)
     x = keras.layers.Dense(cfg["dense-1"])(x)
-    x = keras.layers.Dropout(cfg["dropout_dense"])(x)
+    x = keras.layers.GroupNormalization(groups=cfg["group_norm"])(x)
+    # x = keras.layers.Dropout(cfg["dropout_dense"])(x)
     if cfg["task"] == "regression":
         outputs = keras.layers.Dense(len(cfg["targets"]))(x)
     else:
