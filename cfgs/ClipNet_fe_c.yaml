@@ -1,10 +1,11 @@
 model: clip
+clip_str: clip_vit_large_patch14_336
 task: classification
 subtask: feature-extraction
 countries:
   - CH
-img_height: 224
-img_width: 224
+img_height: 336
+img_width: 336
 preprocessor: clip
 targets:
   - region

@@ -1,9 +1,12 @@
 import os
 
 # needed for quantization-aware training in tensorflow > 2.15
-os.environ["TF_USE_LEGACY_KERAS"] = "1"
+# os.environ["TF_USE_LEGACY_KERAS"] = "1"
 import tensorflow as tf
-import model_compression_toolkit as mct
+
+if tf.__version__ <= "2.15.0" and tf.__version__ >= "2.12.0":
+    # model compression toolkit by sony only supports specific tensorflow versions
+    import model_compression_toolkit as mct
 from load_data import load_dataset
 from models import load_model, MODELS_PATH
 

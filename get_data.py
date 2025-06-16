@@ -1,5 +1,6 @@
 import os
 import zipfile
+import pandas as pd
 from huggingface_hub import snapshot_download
 
 DATA_DIR = r"/home/kaptim/eth/mlmc/project/bottom_up/data/osv5m"
@@ -20,9 +21,19 @@ def extract_data():
                 os.remove(os.path.join(root, file))
 
 
+def shuffle_train_csv():
+    """Shuffle the rows of train.csv. After downloading, the rows
+    are grouped by category, i.e., one country after another, which
+    may have adverse effects on classification tasks"""
+    train = pd.read_csv(DATA_DIR + "/train.csv")
+    train = train.sample(frac=1).reset_index(drop=True)
+    train.to_csv(DATA_DIR + "/train.csv", index=False)
+
+
 def main():
     download_data()
     extract_data()
+    shuffle_train_csv()
 
 
 if __name__ == "__main__":

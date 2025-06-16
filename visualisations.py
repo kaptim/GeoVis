@@ -1,10 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from train import RESULTS_PATH
+from train import RESULTS_PATH, test_run
 
 
-def visualise_10_images(cfg, ds):
+def plot_10_images(cfg, ds):
     """Show ten images in the dataset
 
     Args:
@@ -26,7 +26,7 @@ def visualise_10_images(cfg, ds):
         plt.axis("off")
 
 
-def visualise_error_per_epoch(cfg, train_type):
+def plot_error_per_epoch(cfg, train_type):
     history = pd.read_csv(RESULTS_PATH + cfg["path"] + train_type + ".csv")
 
     plt.plot(
@@ -48,4 +48,5 @@ def visualise_error_per_epoch(cfg, train_type):
     plt.show()
 
 
-# TODO: confusion matrix
+def plot_confusion_matrix(cfg, train_type, mct, tflite):
+    y_true, y_pred = test_run(cfg, train_type, mct, tflite)

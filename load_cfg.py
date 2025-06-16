@@ -4,13 +4,17 @@ from sklearn.preprocessing import OneHotEncoder
 import tensorflow as tf
 import keras
 from load_data import fit_oh_encoder
-from keras_hub.layers import CLIPImageConverter
+
+if tf.__version__ >= "2.19.0":
+    # keras_hub needs tensorflow >= 2.19
+    from keras_hub.layers import CLIPImageConverter
 
 CFGS_FOLDER = "/home/kaptim/eth/mlmc/project/bottom_up/code/cfgs"
 
 
 def convert_loss(cfg):
-    if cfg["preprocessor"] != "clip":
+    preprocessor_str = cfg.get("preprocessor", None)
+    if preprocessor_str is None or preprocessor_str != "clip":
         if cfg["loss"] == "mse":
             return tf.keras.losses.MSE
         elif cfg["loss"] == "ce":
@@ -27,7 +31,8 @@ def convert_loss(cfg):
 
 
 def convert_metric(cfg, metric):
-    if cfg["preprocessor"] != "clip":
+    preprocessor_str = cfg.get("preprocessor", None)
+    if preprocessor_str is None or preprocessor_str != "clip":
         if metric == "mse":
             return tf.keras.metrics.MeanSquaredError()
         elif metric == "mae":
@@ -48,7 +53,8 @@ def convert_metric(cfg, metric):
 
 
 def convert_optimizer(cfg):
-    if cfg["preprocessor"] != "clip":
+    preprocessor_str = cfg.get("preprocessor", None)
+    if preprocessor_str is None or preprocessor_str != "clip":
         if cfg["optimizer"] == "adam":
             return tf.keras.optimizers.Adam(cfg["lr"])
         else:
@@ -60,11 +66,12 @@ def convert_optimizer(cfg):
             raise ValueError(cfg["optimizer"] + " not a known optimizer")
 
 
-def convert_preprocessor(preprocessor_str):
+def convert_preprocessor(cfg):
+    preprocessor_str = cfg.get("preprocessor", None)
     if preprocessor_str == "mobile_net_v2":
         return tf.keras.applications.mobilenet_v2.preprocess_input
     elif preprocessor_str == "clip":
-        return CLIPImageConverter.from_preset("clip_vit_b_32_laion2b_s34b_b79k")
+        return CLIPImageConverter.from_preset(cfg["clip_str"])
     else:
         return None
 
@@ -90,12 +97,13 @@ def check_targets(cfg):
 
 
 def check_subtask(cfg):
+    subtask = cfg.get("subtask", None)
     if (
-        cfg["subtask"] not in ["feature-extraction", "fine-tuning", "from-scratch"]
-        and not None
+        subtask not in ["feature-extraction", "fine-tuning", "from-scratch"]
+        and subtask is not None
     ):
-        raise ValueError(cfg["subtask"] + " not a known task")
-    if cfg["subtask"] == "fine-tuning":
+        raise ValueError(str(subtask) + " not a known task")
+    if subtask == "fine-tuning":
         if cfg["fine_tune_at"] not in ["last", "full"]:
             raise ValueError(
                 cfg["fine_tune_at"] + " not a known fine-tuning configuration"
@@ -115,7 +123,7 @@ def load_cfg(cfg_path):
     cfg["loss"] = convert_loss(cfg)
     cfg["metrics"] = [convert_metric(cfg, metric) for metric in cfg["metrics"]]
     cfg["optimizer"] = convert_optimizer(cfg)
-    cfg["preprocessor"] = convert_preprocessor(cfg.get("preprocessor", None))
+    cfg["preprocessor"] = convert_preprocessor(cfg)
     add_oh_encoder(cfg)
     check_targets(cfg)
     check_subtask(cfg)

@@ -1,14 +1,13 @@
-import os
-
 # needed for quantization-aware training in tensorflow > 2.15
-os.environ["TF_USE_LEGACY_KERAS"] = "1"
+# import os
+# os.environ["TF_USE_LEGACY_KERAS"] = "1"
 import sys
 from load_cfg import load_cfg
 import train
 
 # cfg = load_cfg("MobileNetv2_fe_c.yaml")
 # example usage: python main.py MobileNetv2_fe_c.yaml fp
-# cfg = load_cfg("NaiveRegNet2_1_4_04_04.yaml")
+# cfg = load_cfg("NaiveNet96_2_1_4_04_04_c.yaml")
 # cfg = load_cfg("ClipNet_fe_c.yaml")
 
 

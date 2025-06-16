@@ -6,7 +6,7 @@ import tensorflow as tf
 import tensorflow.keras as keras
 from get_data import DATA_DIR
 
-BATCH_SIZE = 256
+BATCH_SIZE = 128
 PROCESSED_DATA_DIR = "/home/kaptim/eth/mlmc/project/bottom_up/code/processed_data/"
 
 # set seed for reproducibility
@@ -15,7 +15,7 @@ tf.random.set_seed(0)
 
 def fit_oh_encoder(cfg):
     # fit one-hot encoder on training dataset
-    columns = ["id", "country"] + cfg["targets"]
+    columns = list(set(["id", "country"] + cfg["targets"]))
     metadata = pd.read_csv(DATA_DIR + "/train.csv").loc[:, columns]
     metadata = metadata[metadata["country"].isin(cfg["countries"])]
     cfg["oh_encoder"].fit(metadata[cfg["targets"]])
@@ -23,7 +23,7 @@ def fit_oh_encoder(cfg):
 
 def get_metadata(cfg, is_train: bool):
     # returns the pd dataframe containing the metadata for training the model
-    columns = ["id", "country"] + cfg["targets"]
+    columns = list(set(["id", "country"] + cfg["targets"]))
     if is_train:
         metadata = pd.read_csv(DATA_DIR + "/train.csv").loc[:, columns]
     else:
@@ -171,14 +171,6 @@ def load_dataset(cfg, is_train: bool):
         tuple of (train, val) or (test, test_count:int) tf dataset: not loaded into memory
     """
     dataset = "train" if is_train else "test"
-    name = "_".join(
-        [
-            dataset,
-            "_".join(cfg["countries"]),
-            str(cfg["img_height"]),
-            str(cfg["img_width"]),
-        ]
-    )
     # this step might take a few minutes for train on CPU (linear CPU operation)
     list_ds = get_country_data(dataset, cfg, is_train)
 
