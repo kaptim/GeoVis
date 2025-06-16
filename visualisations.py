@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import numpy as np
 import pandas as pd
 from train import RESULTS_PATH, test_run
@@ -50,3 +51,15 @@ def plot_error_per_epoch(cfg, train_type):
 
 def plot_confusion_matrix(cfg, train_type, mct, tflite):
     y_true, y_pred = test_run(cfg, train_type, mct, tflite)
+    y_true_labels = np.argmax(y_true, axis=1)
+    y_pred_labels = np.argmax(y_pred, axis=1)
+
+    cm = confusion_matrix(
+        y_true_labels, y_pred_labels, labels=[i for i in range(len(cfg["classes"]))]
+    )
+    plt.figure()
+    plt.xlabel("Predicted")
+    plt.ylabel("Actual")
+    plt.imshow(cm, interpolation="nearest", cmap="Greens")
+    plt.colorbar()
+    plt.show()

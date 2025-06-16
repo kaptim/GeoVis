@@ -3,12 +3,11 @@ task: classification
 subtask: feature-extraction
 countries:
   - CH
-  - EC
 img_height: 224
 img_width: 224
 preprocessor: mobile_net_v2
 targets:
-  - country
+  - region
 lr: 0.001
 optimizer: adam
 loss: ce

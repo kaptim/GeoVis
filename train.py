@@ -77,7 +77,6 @@ def qa_train(cfg):
 def test_run(cfg, train_type, mct, tflite):
     # load and run model on the test set
     test_ds, img_count = load_dataset(cfg, False)
-    # TODO: try classification
     data_t = int if tflite else np.float32
     if cfg["task"] == "regression":
         y_pred = np.empty((img_count, len(cfg["targets"])), dtype=data_t)

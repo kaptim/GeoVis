@@ -127,4 +127,5 @@ def load_cfg(cfg_path):
     add_oh_encoder(cfg)
     check_targets(cfg)
     check_subtask(cfg)
+    print(cfg)
     return cfg
