@@ -2,8 +2,8 @@ model: naive_net
 task: classification
 countries:
   - IT
-img_height: 96
-img_width: 96
+img_height: 48
+img_width: 48
 targets:
   - region
 lr: 0.001
@@ -14,9 +14,9 @@ metrics:
   - acc
 num_blocks: 2
 block_size: 1
-filters: 4
+filters: 8
 maxpool: 2
-averpool: 4
+averpool: 2
 dense-1: 80
 dropout_conv: 0.4
 dropout_dense: 0.4

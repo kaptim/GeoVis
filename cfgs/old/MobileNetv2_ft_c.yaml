@@ -1,4 +1,5 @@
-model: mobile_net_v2
+model: sota_cnn_net
+model_name: mobile_net_v2
 task: classification
 subtask: fine-tuning # fine-tuning, feature-extraction, from-scratch
 qat: False # whether to use a model for fine-tuning which was trained using quantisation-aware training

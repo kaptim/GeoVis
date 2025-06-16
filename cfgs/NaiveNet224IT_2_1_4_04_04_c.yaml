@@ -2,8 +2,8 @@ model: naive_net
 task: classification
 countries:
   - IT
-img_height: 96
-img_width: 96
+img_height: 224
+img_width: 224
 targets:
   - region
 lr: 0.001

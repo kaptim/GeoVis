@@ -103,7 +103,6 @@ def test_run(cfg, train_type, mct, tflite):
         output_details = interpreter.get_output_details()[0]
 
         test_ds = test_ds.unbatch()
-        # TODO: try classification
         for i, data in enumerate(test_ds):
             test_x = data[0]
             input_scale, input_zero_point = input_details["quantization"]

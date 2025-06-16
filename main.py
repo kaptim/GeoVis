@@ -5,9 +5,9 @@ import sys
 from load_cfg import load_cfg
 import train
 
-# cfg = load_cfg("MobileNetv2_fe_c.yaml")
+# cfg = load_cfg("ClipNet_fe_c.yaml")
 # example usage: python main.py MobileNetv2_fe_c.yaml fp
-# cfg = load_cfg("NaiveNet96IT_2_1_4_04_04_c.yaml")
+# cfg = load_cfg("NaiveNet48IT_2_1_8_04_04_c.yaml")
 # cfg = load_cfg("ClipNet_fe_c.yaml")
 
 

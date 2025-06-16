@@ -1,7 +1,7 @@
 model: sota_cnn_net
 model_name: mobile_net_v2
 task: classification
-subtask: feature-extraction
+subtask: from-scratch # fine-tuning, feature-extraction, from-scratch
 countries:
   - IT
 img_height: 224

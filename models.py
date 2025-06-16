@@ -190,7 +190,7 @@ def naive_net(cfg):
     return model
 
 
-def mobile_net_v2(cfg):
+def sota_cnn_net(cfg):
     # mobile net v2 with feature extraction / fine tuning capabilities
     img_shape = (cfg["img_height"], cfg["img_width"], 3)
     if cfg["subtask"] == "fine-tuning":
@@ -217,7 +217,14 @@ def mobile_net_v2(cfg):
         # whole network: just keep model trainable
         return pretrained_model
 
-    base_model = tf.keras.applications.MobileNetV2(
+    if cfg["model_name"] == "mobile_net_v2":
+        application_model = tf.keras.applications.MobileNetV2
+    elif cfg["model_name"] == "efficient_net_b0":
+        application_model = tf.keras.applications.EfficientNetB0
+    else:
+        raise ValueError(cfg["model_name"] + " unknown")
+
+    base_model = application_model(
         weights=(None if cfg["subtask"] == "from_scratch" else "imagenet"),
         include_top=False,  # only the feature extraction layers
         input_shape=img_shape,
