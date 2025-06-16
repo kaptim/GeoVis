@@ -104,13 +104,6 @@ def test_run(cfg, train_type, mct, tflite):
 
         test_ds = test_ds.unbatch()
         # TODO: try classification
-        if cfg["task"] == "regression":
-            y_pred = np.empty((img_count, len(cfg["targets"])), dtype=int)
-            y_true = np.empty((img_count, len(cfg["targets"])), dtype=int)
-        else:
-            y_pred = np.empty((img_count, len(cfg["classes"])), dtype=int)
-            y_true = np.empty((img_count, len(cfg["classes"])), dtype=int)
-
         for i, data in enumerate(test_ds):
             test_x = data[0]
             input_scale, input_zero_point = input_details["quantization"]
@@ -130,12 +123,12 @@ def test_run(cfg, train_type, mct, tflite):
 
 def evaluate_model(cfg, train_type, mct, tflite=False):
     # evaluate a checkpointed model on the test set
-    test_ds, img_count = load_dataset(cfg, False)
     if not tflite:
+        test_ds, img_count = load_dataset(cfg, False)
         model = load_model(cfg, train_type, mct)
         results = model.evaluate(test_ds)
     else:
-        y_true, y_pred = (cfg, train_type, mct, True)
+        y_true, y_pred = test_run(cfg, train_type, mct, True)
         # calculate loss and all metrics
         results = []
         results.append(np.mean(cfg["loss"](y_true, y_pred)).item())

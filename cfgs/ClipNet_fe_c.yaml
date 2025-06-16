@@ -1,11 +1,11 @@
 model: clip
-clip_str: clip_vit_large_patch14_336
+clip_str: clip_vit_b_32_laion2b_s34b_b79k
 task: classification
 subtask: feature-extraction
 countries:
   - CH
-img_height: 336
-img_width: 336
+img_height: 224
+img_width: 224
 preprocessor: clip
 targets:
   - region
@@ -17,4 +17,4 @@ metrics:
   - acc
 group_norm: 4
 dense-1: 512
-dropout_dense: 0.7
+dropout_dense: 0.4

@@ -70,6 +70,8 @@ def convert_preprocessor(cfg):
     preprocessor_str = cfg.get("preprocessor", None)
     if preprocessor_str == "mobile_net_v2":
         return tf.keras.applications.mobilenet_v2.preprocess_input
+    elif preprocessor_str == "efficient_net_b0":
+        return tf.keras.applications.efficientnet.preprocess_input
     elif preprocessor_str == "clip":
         return CLIPImageConverter.from_preset(cfg["clip_str"])
     else:

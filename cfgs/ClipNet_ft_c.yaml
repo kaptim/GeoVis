@@ -1,13 +1,13 @@
 model: clip
-clip_str: clip_vit_b_32_laion2b_s34b_b79k
+clip_str: clip_vit_large_patch14_336
 task: classification
 subtask: fine-tuning # fine-tuning, feature-extraction, from-scratch
 qat: False # whether to use a model for fine-tuning which was trained using quantisation-aware training
 fine_tune_at: last # last: unfreeze last block, full: train the whole network
 countries:
   - CH
-img_height: 224
-img_width: 224
+img_height: 336
+img_width: 336
 preprocessor: clip
 targets:
   - region

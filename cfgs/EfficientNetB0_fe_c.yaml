@@ -1,9 +1,11 @@
-model: naive_net
+model: efficient_net_b0
 task: classification
+subtask: feature-extraction
 countries:
   - CH
-img_height: 96
-img_width: 96
+img_height: 224
+img_width: 224
+preprocessor: mobile_net_v2
 targets:
   - region
 lr: 0.001
@@ -12,11 +14,4 @@ loss: ce
 epochs: 200
 metrics:
   - acc
-num_blocks: 2
-block_size: 1
-filters: 4
-maxpool: 2
-averpool: 4
-dense-1: 80
-dropout_conv: 0.4
 dropout_dense: 0.4

@@ -96,7 +96,7 @@ def get_country_data(dataset, cfg, is_train):
 
 
 def save_country_data(ds, cfg, name):
-    # save tensorflow dataset as numpy arrays
+    # save tensorflow dataset as numpy arrays (useful for testing on a device)
     x_numpy = np.empty(
         (
             tf.data.experimental.cardinality(ds).numpy(),

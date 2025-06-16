@@ -1,24 +1,22 @@
 model: naive_net
-task: regression
+task: classification
 countries:
-  - CH
-img_height: 224
-img_width: 224
+  - IT
+img_height: 96
+img_width: 96
 targets:
-  - latitude
-  - longitude
+  - region
 lr: 0.001
 optimizer: adam
-loss: mse
+loss: ce
 epochs: 200
 metrics:
-  - mse
-  - mae
+  - acc
 num_blocks: 2
 block_size: 1
 filters: 4
 maxpool: 2
 averpool: 4
 dense-1: 80
-dropout_conv: 0.4
-dropout_dense: 0.4
+dropout_conv: 0.2
+dropout_dense: 0.2
