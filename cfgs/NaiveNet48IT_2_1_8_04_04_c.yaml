@@ -6,6 +6,7 @@ img_height: 48
 img_width: 48
 targets:
   - region
+batch_size: 128
 lr: 0.001
 optimizer: adam
 loss: ce

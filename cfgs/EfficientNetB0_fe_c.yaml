@@ -9,6 +9,7 @@ img_width: 224
 preprocessor: efficient_net_b0
 targets:
   - region
+batch_size: 128
 lr: 0.001
 optimizer: adam
 loss: ce

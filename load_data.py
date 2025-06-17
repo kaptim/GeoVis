@@ -6,7 +6,6 @@ import tensorflow as tf
 import tensorflow.keras as keras
 from get_data import DATA_DIR
 
-BATCH_SIZE = 128
 PROCESSED_DATA_DIR = "/home/kaptim/eth/mlmc/project/bottom_up/code/processed_data/"
 
 # set seed for reproducibility
@@ -137,7 +136,7 @@ def preprocess_data(ds, cfg, is_train: bool):
         # set buffer_size for lower memory consumption
         # (no buffer_size set => all data loaded into memory)
         ds = ds.shuffle(buffer_size=100)
-    ds = ds.batch(BATCH_SIZE, num_parallel_calls=tf.data.AUTOTUNE)
+    ds = ds.batch(cfg["batch_size"], num_parallel_calls=tf.data.AUTOTUNE)
 
     if is_train:
         # only augment train set

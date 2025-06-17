@@ -9,6 +9,7 @@ img_width: 224
 preprocessor: mobile_net_v2
 targets:
   - region
+batch_size: 32
 lr: 0.001
 optimizer: adam
 loss: ce

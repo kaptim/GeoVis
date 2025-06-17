@@ -1,6 +1,7 @@
 # needed for quantization-aware training in tensorflow > 2.15
-# import os
-# os.environ["TF_USE_LEGACY_KERAS"] = "1"
+import os
+
+os.environ["TF_USE_LEGACY_KERAS"] = "1"
 import numpy as np
 import tensorflow as tf
 import tensorflow_model_optimization as tfmot
@@ -128,13 +129,20 @@ def evaluate_model(cfg, train_type, mct, tflite=False):
         results = model.evaluate(test_ds)
     else:
         y_true, y_pred = test_run(cfg, train_type, mct, True)
-        # calculate loss and all metrics
+        # compute all metrics
         results = []
-        results.append(np.mean(cfg["loss"](y_true, y_pred)).item())
         for metric in cfg["metrics"]:
             results.append(np.mean(metric(y_true, y_pred)).item())
 
-    print(results)
+    if not os.path.exists(RESULTS_PATH + "test_results.csv"):
+        with open(RESULTS_PATH + "test_results.csv", "w") as fd:
+            fd.write("Name,QAT,MCT,TFLITE,Accuracy")
+    # append test results
+    with open(RESULTS_PATH + "test_results.csv", "a") as fd:
+        fd.write(
+            ",".join([cfg["path"], train_type, mct, str(tflite), str(results[-1])])
+            + "\n"
+        )
 
 
 def evaluate_clip(cfg):

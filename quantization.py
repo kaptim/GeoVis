@@ -1,7 +1,7 @@
 import os
 
 # needed for quantization-aware training in tensorflow > 2.15
-# os.environ["TF_USE_LEGACY_KERAS"] = "1"
+os.environ["TF_USE_LEGACY_KERAS"] = "1"
 import tensorflow as tf
 
 if tf.__version__ <= "2.15.0" and tf.__version__ >= "2.12.0":

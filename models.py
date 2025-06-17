@@ -1,7 +1,7 @@
 import os
 
 # needed for quantization-aware training in tensorflow > 2.15
-# os.environ["TF_USE_LEGACY_KERAS"] = "1"
+os.environ["TF_USE_LEGACY_KERAS"] = "1"
 import tensorflow as tf
 import tensorflow_model_optimization as tfmot
 
@@ -241,6 +241,8 @@ def sota_cnn_net(cfg):
     )
     x = tf.keras.layers.GlobalAveragePooling2D()(x)
     x = tf.keras.layers.Dropout(cfg["dropout_dense"])(x)
+    if cfg.get("dense-1", None) is not None:
+        x = keras.layers.Dense(cfg["dense-1"], activation="relu")(x)
     if cfg["task"] == "regression":
         outputs = tf.keras.layers.Dense(len(cfg["targets"]))(x)
     else:
@@ -294,6 +296,7 @@ def clip(cfg):
     x = vision_pooler(x)
     # architecture inspired by the OSV-5M paper
     # x = keras.layers.Dropout(cfg["dropout_dense"])(x)
+    # TODO: activations missing
     x = keras.layers.Dense(x.shape[1])(x)
     x = keras.layers.GroupNormalization(groups=cfg["group_norm"])(x)
     # x = keras.layers.Dropout(cfg["dropout_dense"])(x)

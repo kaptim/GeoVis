@@ -1,11 +1,12 @@
 # needed for quantization-aware training in tensorflow > 2.15
-# import os
-# os.environ["TF_USE_LEGACY_KERAS"] = "1"
+import os
+
+os.environ["TF_USE_LEGACY_KERAS"] = "1"
 import sys
 from load_cfg import load_cfg
 import train
 
-# cfg = load_cfg("ClipNet_fe_c.yaml")
+# cfg = load_cfg("EfficientNetB0_fe_c.yaml")
 # example usage: python main.py MobileNetv2_fe_c.yaml fp
 # cfg = load_cfg("NaiveNet48IT_2_1_8_04_04_c.yaml")
 # cfg = load_cfg("ClipNet_fe_c.yaml")
@@ -16,9 +17,12 @@ def main():
     if sys.argv[2] == "qa":
         train.qa_train(cfg)
     elif sys.argv[2] == "qp":
-        train.quantize_post_training(cfg)
+        train.quantize_post_training(cfg, "")
     elif sys.argv[2] == "fp":
         train.fp_train(cfg)
+    elif sys.argv[2] == "ev":
+        train.evaluate_model(cfg, "", "", tflite=False)
+        train.evaluate_model(cfg, "", "", tflite=True)
     else:
         raise ValueError(sys.argv[2] + " not a known function")
 
