@@ -6,9 +6,9 @@ import sys
 from load_cfg import load_cfg
 import train
 
-# cfg = load_cfg("EfficientNetB0_fe_c.yaml")
+# cfg = load_cfg("NaiveNet96IT_2_1_4_c.yaml")
 # example usage: python main.py MobileNetv2_fe_c.yaml fp
-# cfg = load_cfg("NaiveNet48IT_2_1_8_04_04_c.yaml")
+# cfg = load_cfg("NaiveNet224IT_3_1_12_c.yaml")
 # cfg = load_cfg("ClipNet_fe_c.yaml")
 
 
@@ -23,6 +23,11 @@ def main():
     elif sys.argv[2] == "ev":
         train.evaluate_model(cfg, "", "", tflite=False)
         train.evaluate_model(cfg, "", "", tflite=True)
+    elif sys.argv[2] == "kd":
+        cfg_teacher = load_cfg(sys.argv[3])
+        print(cfg)
+        print(cfg_teacher)
+        # train.kd_train(cfg, cfg_teacher)
     else:
         raise ValueError(sys.argv[2] + " not a known function")
 

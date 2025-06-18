@@ -16,43 +16,6 @@ if tf.__version__ >= "2.19.0":
 MODELS_PATH = "/home/kaptim/eth/mlmc/project/bottom_up/code/saved_models/"
 
 
-def wild_test():
-    import numpy as np
-
-    mnist = tf.keras.datasets.mnist
-
-    (x_train, y_train), (x_test, y_test) = mnist.load_data()
-    x_train, x_test = x_train / 255.0, x_test / 255.0
-
-    cfg = {}
-    cfg["model"] = "naive_net"
-    cfg["img_height"] = 28
-    cfg["img_width"] = 28
-    cfg["dense-1"] = 50
-    cfg["task"] = "classification"
-    cfg["num_blocks"] = 2
-    cfg["block_size"] = 1
-    cfg["filters"] = 4
-    cfg["maxpool"] = 2
-    cfg["averpool"] = 2
-    cfg["dropout_conv"] = 0.4
-    cfg["dropout_dense"] = 0.4
-    cfg["classes"] = np.unique(y_train).tolist()
-    cfg["optimizer"] = tf.keras.optimizers.Adam(0.001)
-    cfg["loss"] = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
-    cfg["metrics"] = [tf.keras.metrics.CategoricalAccuracy()]
-
-    x_train = np.reshape(x_train, (60000, 28, 28, 1))
-    x_test = np.reshape(x_test, (10000, 28, 28, 1))
-    y_train = tf.keras.utils.to_categorical(y_train, num_classes=len(cfg["classes"]))
-    y_test = tf.keras.utils.to_categorical(y_test, num_classes=len(cfg["classes"]))
-
-    model = create_model(cfg, "")
-
-    model.fit(x_train, y_train, epochs=5)
-    model.evaluate(x_test, y_test, verbose=2)
-
-
 class Distiller(tf.keras.Model):
     """
     Custom model that encapsulates knowledge distillation.
@@ -299,9 +262,11 @@ def clip(cfg):
     # TODO: activations missing
     x = keras.layers.Dense(x.shape[1])(x)
     x = keras.layers.GroupNormalization(groups=cfg["group_norm"])(x)
+    x = keras.layers.ReLU()(x)
     # x = keras.layers.Dropout(cfg["dropout_dense"])(x)
     x = keras.layers.Dense(cfg["dense-1"])(x)
     x = keras.layers.GroupNormalization(groups=cfg["group_norm"])(x)
+    x = keras.layers.ReLU()(x)
     # x = keras.layers.Dropout(cfg["dropout_dense"])(x)
     if cfg["task"] == "regression":
         outputs = keras.layers.Dense(len(cfg["targets"]))(x)

@@ -10,7 +10,7 @@ if tf.__version__ >= "2.19.0":
     # keras_hub needs tensorflow >= 2.19
     from keras_hub.models import CLIPBackbone, CLIPTokenizer
 from load_data import load_dataset
-from models import create_model, load_model, MODELS_PATH
+from models import create_model, load_model, Distiller, MODELS_PATH
 from utils import convert_tflite_to_c
 from quantization import quantize_post_training
 
@@ -38,6 +38,12 @@ def train_run(cfg, model, train_type):
         verbose=1,
     )
     # TODO: learning rate scheduler?
+    early_stopping = tf.keras.callbacks.EarlyStopping(
+        monitor=(
+            "val_loss" if cfg["task"] == "regression" else "val_categorical_accuracy"
+        ),
+        patience=40,
+    )
 
     # save training and validation results
     csv_logger = tf.keras.callbacks.CSVLogger(
@@ -48,7 +54,7 @@ def train_run(cfg, model, train_type):
         train_ds,
         validation_data=val_ds,
         epochs=cfg["epochs"],
-        callbacks=[checkpoint_callback, csv_logger],
+        callbacks=[checkpoint_callback, csv_logger, early_stopping],
     )
 
 
@@ -68,11 +74,35 @@ def qa_train(cfg):
         loss=cfg["loss"],
         metrics=cfg["metrics"],
     )
-    train_type = "qat"
-    train_run(cfg, qa_model, train_type)
+    name = "qat"
+    train_run(cfg, qa_model, name)
     print("QATrain: Quantize")
-    quantize_post_training(cfg, train_type)
-    convert_tflite_to_c(cfg, train_type)
+    quantize_post_training(cfg, name)
+
+
+def kd_train(cfg_student, cfg_teacher, kd_alpha=0.3, kd_temp=2):
+    # kd_alpha: knowledge distillation alpha value, lower value => distillation loss more important
+    # kd_temp: knowledge distillation temperature value, smooths the probability distributions
+    print(
+        "Knowledge distillation, student: "
+        + cfg_student["path"]
+        + ", teacher: "
+        + cfg_teacher["path"]
+    )
+    # train using Clip's preprocessor
+    cfg_student["preprocessor"] = cfg_teacher["preprocessor"]
+    distiller = Distiller(
+        create_model(cfg_student, ""), load_model(cfg_teacher, "", "")
+    )
+    distiller.compile(
+        optimizer=cfg_student["optimizer"],
+        metrics=cfg_student["metrics"],
+        student_loss_fn=cfg_student["loss"],
+        distillation_loss_fn=tf.keras.losses.KLDivergence(),
+        alpha=kd_alpha,
+        temperature=kd_temp,
+    )
+    train_run(cfg_student, distiller, "")
 
 
 def test_run(cfg, train_type, mct, tflite):

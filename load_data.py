@@ -105,14 +105,15 @@ def save_country_data(ds, cfg, name):
         )
     )
     y_numpy = np.empty(
-        (tf.data.experimental.cardinality(ds).numpy(), len(cfg["targets"]))
+        (
+            tf.data.experimental.cardinality(ds).numpy(),
+            len(cfg["targets"]) if cfg["task"] == "regression" else len(cfg["classes"]),
+        )
     )
     for i, data in enumerate(ds):
         x_numpy[i] = data[0].numpy()
         y_numpy[i] = data[1].numpy()
 
-    np.save(PROCESSED_DATA_DIR + "x_" + name, x_numpy)
-    np.save(PROCESSED_DATA_DIR + "y_" + name, y_numpy)
     # full quantization input and output (needed for inference on the device)
     np.save(PROCESSED_DATA_DIR + "x_" + name + "_q", x_numpy.astype(np.uint8))
     np.save(PROCESSED_DATA_DIR + "y_" + name + "_q", y_numpy.astype(np.uint8))

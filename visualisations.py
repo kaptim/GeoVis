@@ -1,8 +1,10 @@
 import matplotlib.pyplot as plt
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import confusion_matrix
 import numpy as np
 import pandas as pd
 from train import RESULTS_PATH, test_run
+
+PLOT_FOLDER = "/home/kaptim/eth/mlmc/project/bottom_up/code/plots/"
 
 
 def plot_10_images(cfg, ds):
@@ -63,3 +65,51 @@ def plot_confusion_matrix(cfg, train_type, mct, tflite):
     plt.imshow(cm, interpolation="nearest", cmap="Greens")
     plt.colorbar()
     plt.show()
+
+
+def plot_test_accuracy_sorted():
+    tests = pd.read_csv(RESULTS_PATH + "test_results.csv")
+    # include qat information
+    # insert dummy 0 accuracy for non-quantized qat models
+    tests_dict = tests.to_dict(orient="records")
+    additional_rows = []
+    for test in tests_dict:
+        if test["QAT"] == "qat" and test["TFLITE"] == True:
+            additional_rows.append(
+                {
+                    k: (0 if k == "Accuracy" else (False if k == "TFLITE" else v))
+                    for k, v in test.items()
+                }
+            )
+    tests = pd.DataFrame(tests_dict + additional_rows)
+    tests["Name"] = tests["Name"] + tests["QAT"].fillna("")
+
+    tests_q = (
+        tests[tests["TFLITE"] == True]
+        .sort_values(by="Accuracy", ascending=False)
+        .reset_index(drop=True)
+    )
+    tests_non_q = tests[tests["TFLITE"] == False]
+    # sort non-quantised values based on quantised values
+    tests_non_q["q_ranking"] = [
+        tests_q[tests_q["Name"] == x].index[0] for x in tests_non_q["Name"].to_list()
+    ]
+    tests_non_q = tests_non_q.sort_values(by="q_ranking").drop("q_ranking", axis=1)
+
+    f, (ax1, ax2) = plt.subplots(2, 1, figsize=(7, 5), sharex=True)
+    x = [
+        "".join([c for c in l.split("_")[0] if c.isupper() or c.isnumeric()])
+        + "\n"
+        + "_".join(l.split("_")[1:])
+        for l in tests_q.Name.to_list()
+    ]
+    y1 = tests_non_q.Accuracy.to_numpy()
+    ax1.set_ylabel("Floating Point")
+    ax1.bar(x, y1, color="darkblue")
+    y2 = tests_q.Accuracy.to_numpy()
+    ax2.set_ylabel("Quantised")
+    ax2.bar(x, y2, color="darkgreen")
+    ax2.tick_params(axis="x", labelsize=6)
+    f.suptitle("Test Accuracy", fontsize=14)
+
+    f.savefig(PLOT_FOLDER + "test_accuracy.png")
