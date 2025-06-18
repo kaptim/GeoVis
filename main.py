@@ -27,7 +27,7 @@ def main():
         cfg_teacher = load_cfg(sys.argv[3])
         print(cfg)
         print(cfg_teacher)
-        # train.kd_train(cfg, cfg_teacher)
+        train.kd_train(cfg, cfg_teacher)
     else:
         raise ValueError(sys.argv[2] + " not a known function")
 
