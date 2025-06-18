@@ -1,0 +1,23 @@
+model: naive_net
+task: classification
+countries:
+  - IT
+img_height: 224
+img_width: 224
+targets:
+  - region
+batch_size: 128
+lr: 0.005
+optimizer: adam
+loss: ce
+epochs: 100
+metrics:
+  - acc
+num_blocks: 4
+block_size: 1
+filters: 8
+maxpool: 2
+averpool: 4
+dense-1: 80
+dropout_conv: 0.4
+dropout_dense: 0.4

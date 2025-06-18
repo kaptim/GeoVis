@@ -1,7 +1,7 @@
 import os
 import re
 import subprocess
-from models import MODELS_PATH
+from models import MODELS_PATH, load_model
 
 
 def hex_to_c_array(hex_data, var_name):
@@ -103,3 +103,31 @@ def mct_setup():
         print(f"Java installed")
     else:
         print(f"Java missing and installation failed")
+
+
+def calculate_memory_consumption(cfg, train_type, mct):
+    from train import RESULTS_PATH
+
+    # calculates the INT8 memory consumption
+    model = load_model(cfg, train_type, mct)
+    num_params = model.count_params()
+
+    total_bytes = num_params * 1
+    mb = total_bytes / (1024 * 1024)
+
+    if not os.path.exists(RESULTS_PATH + "mem_results.csv"):
+        with open(RESULTS_PATH + "mem_results.csv", "w") as fd:
+            fd.write("Name,QAT,MCT,Memory in MB\n")
+    # append test results
+    with open(RESULTS_PATH + "mem_results.csv", "a") as fd:
+        fd.write(
+            ",".join(
+                [
+                    cfg["path"],
+                    train_type,
+                    mct,
+                    f"{mb:.2f} MB",
+                ]
+            )
+            + "\n"
+        )

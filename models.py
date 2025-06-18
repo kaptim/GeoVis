@@ -205,7 +205,7 @@ def sota_cnn_net(cfg):
     x = tf.keras.layers.GlobalAveragePooling2D()(x)
     x = tf.keras.layers.Dropout(cfg["dropout_dense"])(x)
     if cfg.get("dense-1", None) is not None:
-        x = keras.layers.Dense(cfg["dense-1"], activation="relu")(x)
+        x = tf.keras.layers.Dense(cfg["dense-1"], activation="relu")(x)
     if cfg["task"] == "regression":
         outputs = tf.keras.layers.Dense(len(cfg["targets"]))(x)
     else:
@@ -315,6 +315,25 @@ def load_model(cfg, train_type, mct):
         )
         model.compile(loss=cfg["loss"], metrics=cfg["metrics"])
     return model
+
+
+def load_student_model(cfg_student, cfg_teacher, kd_alpha=0.4, kd_temp=2):
+    """Returns the student model of a distilled model"""
+    distiller = Distiller(
+        create_model(cfg_student, ""), load_model(cfg_teacher, "", "")
+    )
+    distiller.compile(
+        optimizer=cfg_student["optimizer"],
+        metrics=cfg_student["metrics"],
+        student_loss_fn=cfg_student["loss"],
+        distillation_loss_fn=tf.keras.losses.KLDivergence(),
+        alpha=kd_alpha,
+        temperature=kd_temp,
+    )
+    distiller.load_weights(
+        MODELS_PATH + "weights/" + cfg_student["path"] + ".weights.h5"
+    )
+    return distiller.student
 
 
 def save_h5_model(cfg, train_type, mct):

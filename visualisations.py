@@ -3,6 +3,8 @@ from sklearn.metrics import confusion_matrix
 import numpy as np
 import pandas as pd
 from train import RESULTS_PATH, test_run
+from models import load_model
+import visualkeras
 
 PLOT_FOLDER = "/home/kaptim/eth/mlmc/project/bottom_up/code/plots/"
 
@@ -34,21 +36,22 @@ def plot_error_per_epoch(cfg, train_type):
 
     plt.plot(
         history["epoch"],
-        history["mean_squared_error"],
+        history["categorical_accuracy"],
         label="train",
         c="darkgreen",
     )
     plt.plot(
         history["epoch"],
-        history["val_mean_squared_error"],
+        history["val_categorical_accuracy"],
         label="val",
         c="darkblue",
     )
     plt.xlabel("Epoch")
-    plt.ylabel("MSE")
+    plt.ylabel("Accuracy")
     plt.legend()
     plt.xlim([history["epoch"].min() - 0.5, history["epoch"].max() + 0.5])
-    plt.show()
+
+    plt.savefig(PLOT_FOLDER + cfg["path"] + "_error_per_epoch.png")
 
 
 def plot_confusion_matrix(cfg, train_type, mct, tflite):
@@ -64,7 +67,8 @@ def plot_confusion_matrix(cfg, train_type, mct, tflite):
     plt.ylabel("Actual")
     plt.imshow(cm, interpolation="nearest", cmap="Greens")
     plt.colorbar()
-    plt.show()
+
+    plt.savefig(PLOT_FOLDER + cfg["path"] + "_hm.png")
 
 
 def plot_test_accuracy_sorted():
@@ -113,3 +117,9 @@ def plot_test_accuracy_sorted():
     f.suptitle("Test Accuracy", fontsize=14)
 
     f.savefig(PLOT_FOLDER + "test_accuracy.png")
+
+
+def plot_model(cfg, train_type, mct):
+    model = load_model(cfg, train_type, mct)
+    img = visualkeras.layered_view(model, legend=True)
+    img.save(PLOT_FOLDER + cfg["path"] + "_vis.png")

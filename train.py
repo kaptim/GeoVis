@@ -80,7 +80,7 @@ def qa_train(cfg):
     quantize_post_training(cfg, name)
 
 
-def kd_train(cfg_student, cfg_teacher, kd_alpha=0.3, kd_temp=2):
+def kd_train(cfg_student, cfg_teacher, kd_alpha=0.4, kd_temp=2):
     # kd_alpha: knowledge distillation alpha value, lower value => distillation loss more important
     # kd_temp: knowledge distillation temperature value, smooths the probability distributions
     print(
@@ -89,7 +89,7 @@ def kd_train(cfg_student, cfg_teacher, kd_alpha=0.3, kd_temp=2):
         + ", teacher: "
         + cfg_teacher["path"]
     )
-    # train using Clip's preprocessor
+    # train using the teacher's preprocessor
     cfg_student["preprocessor"] = cfg_teacher["preprocessor"]
     distiller = Distiller(
         create_model(cfg_student, ""), load_model(cfg_teacher, "", "")
@@ -166,7 +166,7 @@ def evaluate_model(cfg, train_type, mct, tflite=False):
 
     if not os.path.exists(RESULTS_PATH + "test_results.csv"):
         with open(RESULTS_PATH + "test_results.csv", "w") as fd:
-            fd.write("Name,QAT,MCT,TFLITE,Accuracy")
+            fd.write("Name,QAT,MCT,TFLITE,Accuracy\n")
     # append test results
     with open(RESULTS_PATH + "test_results.csv", "a") as fd:
         fd.write(

@@ -4,12 +4,13 @@ import os
 os.environ["TF_USE_LEGACY_KERAS"] = "1"
 import sys
 from load_cfg import load_cfg
+from utils import calculate_memory_consumption
 import train
 
-# cfg = load_cfg("NaiveNet96IT_2_1_4_c.yaml")
-# example usage: python main.py MobileNetv2_fe_c.yaml fp
-# cfg = load_cfg("NaiveNet224IT_3_1_12_c.yaml")
 # cfg = load_cfg("ClipNet_fe_c.yaml")
+# example usage: python main.py MobileNetv2_fe_c.yaml fp
+# cfg = load_cfg("NaiveNet48IT_2_1_8_c.yaml")
+# cfg = load_cfg("EfficientNetB0_fe_c.yaml")
 
 
 def main():
@@ -28,6 +29,8 @@ def main():
         print(cfg)
         print(cfg_teacher)
         train.kd_train(cfg, cfg_teacher)
+    elif sys.argv[2] == "cm":
+        calculate_memory_consumption(cfg, "", "")
     else:
         raise ValueError(sys.argv[2] + " not a known function")
 
