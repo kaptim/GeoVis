@@ -5,6 +5,11 @@ os.environ["TF_USE_LEGACY_KERAS"] = "1"
 import tensorflow as tf
 import tensorflow_model_optimization as tfmot
 
+if tf.__version__ <= "2.15.0" and tf.__version__ >= "2.12.0":
+    # model compression toolkit by sony only supports specific tensorflow versions
+    import model_compression_toolkit as mct
+
+
 if tf.__version__ >= "2.19.0":
     # keras_hub needs tensorflow >= 2.19
     import keras
@@ -293,11 +298,11 @@ def create_model(cfg, train_type):
         return model
 
 
-def load_model(cfg, train_type, mct):
+def load_model(cfg, train_type, mct_str):
     """Create model and load saved weights into it
     train_type: "" if fp, "qat" if qa training
-    mct: "mct" if mct (Sony), "" else"""
-    if not mct:
+    mct_str: "mct" if mct (Sony), "" else"""
+    if not mct_str:
         try:
             model = create_model(cfg, train_type)
             model.load_weights(
@@ -336,10 +341,10 @@ def load_student_model(cfg_student, cfg_teacher, kd_alpha=0.4, kd_temp=2):
     return distiller.student
 
 
-def save_h5_model(cfg, train_type, mct):
+def save_h5_model(cfg, train_type, mct_str):
     """Load and save (trained) tensorflow model
     (.h5: legacy format but very useful for transferring models between tensorflow versions)
     """
-    model = load_model(cfg, train_type, mct)
-    model.save(MODELS_PATH + cfg["path"] + mct + train_type + ".h5")
+    model = load_model(cfg, train_type, mct_str)
+    model.save(MODELS_PATH + cfg["path"] + mct_str + train_type + ".h5")
     print(".h5 file saved successfully")

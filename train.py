@@ -11,7 +11,6 @@ if tf.__version__ >= "2.19.0":
     from keras_hub.models import CLIPBackbone, CLIPTokenizer
 from load_data import load_dataset
 from models import create_model, load_model, Distiller, MODELS_PATH
-from utils import convert_tflite_to_c
 from quantization import quantize_post_training
 
 RESULTS_PATH = "/home/kaptim/eth/mlmc/project/bottom_up/code/results/"
