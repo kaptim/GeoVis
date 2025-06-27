@@ -12,12 +12,37 @@ PROCESSED_DATA_DIR = "/home/kaptim/eth/mlmc/project/bottom_up/code/processed_dat
 tf.random.set_seed(0)
 
 
-def fit_oh_encoder(cfg):
+def set_up_classification(cfg, is_scaled=False):
     # fit one-hot encoder on training dataset
     columns = list(set(["id", "country"] + cfg["targets"]))
     metadata = pd.read_csv(DATA_DIR + "/train.csv").loc[:, columns]
     metadata = metadata[metadata["country"].isin(cfg["countries"])]
     cfg["oh_encoder"].fit(metadata[cfg["targets"]])
+
+    if cfg.get("balanced", False):
+        region_counts = metadata.region.value_counts()[
+            cfg["oh_encoder"].categories_[0].tolist()
+        ]
+        """ # save initial bias
+        if is_scaled:
+            bias = (
+                -1
+                + (region_counts - region_counts.min())
+                * 2
+                / (region_counts.max() - region_counts.min())
+            ).values
+        else:
+            bias = region_counts.values
+
+        def bias_init(shape):
+            return tf.Variable(bias, dtype=np.float32)
+
+        cfg["bias_init"] = bias_init"""
+        # save class weights
+        cfg["class_weight"] = {
+            i: (1 / region_counts.iloc[i]) * (metadata.shape[0] / 2.0)
+            for i in range(region_counts.shape[0])
+        }
 
 
 def get_metadata(cfg, is_train: bool):

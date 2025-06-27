@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.preprocessing import OneHotEncoder
 import tensorflow as tf
 import keras
-from load_data import fit_oh_encoder
+from load_data import set_up_classification
 
 if tf.__version__ >= "2.19.0":
     # keras_hub needs tensorflow >= 2.19
@@ -85,7 +85,7 @@ def add_oh_encoder(cfg):
         cfg["oh_encoder"] = OneHotEncoder(handle_unknown="error", dtype=np.float32)
         # need to always fit it to the training data so that we have
         # the same encoder for training and testing (this may take a while)
-        fit_oh_encoder(cfg)
+        set_up_classification(cfg)
         cfg["classes"] = cfg["oh_encoder"].categories_[0]
     elif cfg["task"] == "regression":
         return

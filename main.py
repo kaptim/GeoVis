@@ -9,7 +9,7 @@ import train
 
 # cfg = load_cfg("ClipNet_fe_c.yaml")
 # example usage: python main.py MobileNetv2_fe_c.yaml fp
-# cfg = load_cfg("NaiveNet96IT_2_1_4_c.yaml")
+# cfg = load_cfg("NaiveNet96IT_2_1_4_cbal.yaml")
 # cfg = load_cfg("EfficientNetB0_fe_c.yaml")
 
 

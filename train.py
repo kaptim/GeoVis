@@ -49,12 +49,21 @@ def train_run(cfg, model, train_type):
         RESULTS_PATH + cfg["path"] + train_type + ".csv"
     )
 
-    model.fit(
-        train_ds,
-        validation_data=val_ds,
-        epochs=cfg["epochs"],
-        callbacks=[checkpoint_callback, csv_logger, early_stopping],
-    )
+    if cfg["balanced"]:
+        model.fit(
+            train_ds,
+            validation_data=val_ds,
+            epochs=cfg["epochs"],
+            callbacks=[checkpoint_callback, csv_logger, early_stopping],
+            class_weight=cfg["class_weight"],
+        )
+    else:
+        model.fit(
+            train_ds,
+            validation_data=val_ds,
+            epochs=cfg["epochs"],
+            callbacks=[checkpoint_callback, csv_logger, early_stopping],
+        )
 
 
 def fp_train(cfg):
