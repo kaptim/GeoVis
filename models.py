@@ -116,9 +116,6 @@ class Distiller(tf.keras.Model):
         return results
 
 
-# TODO: feature-based distillation
-
-
 def naive_conv_block(model, block_size, filters, kernel, strides, padding):
     for i in range(block_size):
         model.add(tf.keras.layers.Conv2D(filters, kernel, strides, padding))
@@ -264,7 +261,6 @@ def clip(cfg):
     x = vision_pooler(x)
     # architecture inspired by the OSV-5M paper
     # x = keras.layers.Dropout(cfg["dropout_dense"])(x)
-    # TODO: activations missing
     x = keras.layers.Dense(x.shape[1])(x)
     x = keras.layers.GroupNormalization(groups=cfg["group_norm"])(x)
     x = keras.layers.ReLU()(x)

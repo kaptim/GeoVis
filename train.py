@@ -36,7 +36,6 @@ def train_run(cfg, model, train_type):
         save_weights_only=True,
         verbose=1,
     )
-    # TODO: learning rate scheduler?
     early_stopping = tf.keras.callbacks.EarlyStopping(
         monitor=(
             "val_loss" if cfg["task"] == "regression" else "val_categorical_accuracy"
